@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-theme="default">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KeenVector API Reference</title>
+    <link rel="icon" href="/favicon.svg" />
+    <style>
+      body { margin: 0; }
+    </style>
+  </head>
+  <body>
+    <script id="api-reference" data-url="/openapi.yaml" data-proxy-url="https://proxy.scalar.com"></script>
+    <script>
+      var configuration = {
+        theme: 'purple',
+        favicon: '/favicon.svg',
+        metaData: {
+          title: 'KeenVector API Reference',
+          description: 'API reference for the KeenVector multi-channel messaging platform.',
+        },
+        hideDarkModeToggle: false,
+        darkMode: false,
+        hideClientButton: false,
+      }
+      document.getElementById('api-reference').dataset.configuration = JSON.stringify(configuration)
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>
