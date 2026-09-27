@@ -93,11 +93,13 @@ Returns your last 20 verified events, newest first:
 `ProviderMessageID` back to the `ProviderMessageID` you got from `POST /v1/messages` to
 track a specific message's lifecycle.
 
-## Testing your setup
+## Testing inbound provider webhooks
 
-There's no "send test webhook" button on our side that means anything — a fabricated event
-we sign ourselves proves our code runs, not that your actual secret and callback URL are
-wired correctly. The real test:
+This is about *Meta/Slack calling us* (the config above), not the console's outbound
+**Send test** button covered earlier. For this inbound direction, there's no "send test
+webhook" button on our side that means anything — a fabricated event we sign ourselves
+proves our code runs, not that your actual secret and callback URL are wired correctly.
+The real test:
 
 1. In your Meta/Slack App dashboard, trigger their own "Send test event" (or just send a
    real WhatsApp message and wait for the delivery receipt)

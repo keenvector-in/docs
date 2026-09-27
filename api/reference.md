@@ -44,17 +44,6 @@ Bulk-send an approved template to many recipients at once.
 | `GET` | `/campaigns/{id}/targets` | Per-recipient status |
 | `POST` | `/campaigns/{id}/trigger` | Send to every recipient |
 
-## Outbound webhooks
-
-KeenVector delivering events *to* your endpoint (separate from the inbound webhook
-configuration below, which is providers calling *us*).
-
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/outbound-webhooks/endpoints` | Set your event-delivery URL + signing secret |
-| `POST` | `/outbound-webhooks/events` | Enqueue an event for delivery |
-| `GET` | `/outbound-webhooks/deliveries` | List delivery attempts |
-
 ## Webhooks
 
 | Method | Path | Description |
@@ -66,6 +55,10 @@ configuration below, which is providers calling *us*).
 
 `{provider}` is `whatsapp`, `instagram`, or `slack`. See
 [Webhooks](/api/webhooks) for detail.
+
+KeenVector delivering events *to* your endpoint (outbound, the reverse direction) is
+configured in the console under **Developer → Webhooks**, not via an HTTP endpoint — see
+[Webhooks § Receiving KeenVector events](/api/webhooks#receiving-keenvector-events).
 
 ## Error format
 

@@ -40,5 +40,6 @@ authoritative and [let us know](mailto:support@keenvector.in).
 
 `POST /v1/messages` returning `201` means KeenVector accepted and forwarded your request —
 check the `Status` field (`SENT`/`FAILED`) on the response, and subscribe to
-[Webhooks](/api/webhooks) for the actual delivered/read outcome. A queue-backed accept
-(`202`, used by outbound-webhooks) means the same thing one layer further out.
+[Webhooks](/api/webhooks) for the actual delivered/read outcome. The same idea applies one
+layer further out to any queue-backed accept (`202`): accepted for processing, not yet the
+final outcome.

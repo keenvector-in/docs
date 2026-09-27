@@ -90,10 +90,15 @@ This spec documents only endpoints that exist in `core-engine` today. Two things
 knowing before you extend it:
 
 - **Only `POST`/`GET /v1/messages` (message-api) has real API-key auth.** Every other
-  documented endpoint (`/whatsapp/*`, `/campaigns/*`, `/webhooks/*`, `/outbound-webhooks/*`,
-  `/keys`, `/verify`) is served by a service whose own code comments say its tenant
-  isolation is a development stand-in (`X-Tenant-ID` header), not the real thing yet.
-  They're tagged **Preview** in the spec for exactly this reason.
+  documented endpoint (`/whatsapp/*`, `/campaigns/*`, `/webhooks/*`) is served by a service
+  whose own code comments say its tenant isolation is a development stand-in
+  (`X-Tenant-ID` header), not the real thing yet. They're tagged **Preview** in the spec
+  for exactly this reason.
+- **API keys and outbound webhooks are gRPC-only behind edge-gateway's console routes**
+  (`/api/developer/*`, JWT-authenticated) — auth-service and outbound-webhooks have no
+  public HTTP surface of their own, so they're not in `openapi.yaml`. Tenants manage both
+  from the business-admin-portal console (**Developer → API keys**, **Developer →
+  Webhooks**), not by calling `/keys`, `/verify` or `/outbound-webhooks/*` directly.
 - **SMS, Email, Instagram, Slack, RCS, voice, push, Contacts, Media, and tenant
   self-service have no HTTP endpoints yet** — several services in `core-engine/services/`
   (`contact-service`, `analytics-service`, `billing-service`, `dispatcher`,
