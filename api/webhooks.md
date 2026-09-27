@@ -16,11 +16,12 @@ Every delivery is a `POST` with a JSON body and two headers:
 | Header | Value |
 |---|---|
 | `X-KeenVector-Event` | the event name, e.g. `message.delivered` |
+| `X-KeenVector-Delivery` | this delivery's id — unique per attempt group, unchanged across retries |
 | `X-KeenVector-Signature` | `sha256=` + hex HMAC-SHA256 of the raw body, keyed with your signing secret (`whsec_…`) |
 
 Answer with any `2xx` within 10 seconds. Anything else is retried up to 6 attempts with
 exponential backoff (2, 4, 8, 16, 32 minutes), then marked failed in the delivery log.
-Deliveries are at-least-once: dedupe on the payload's id.
+Deliveries are at-least-once: dedupe on `X-KeenVector-Delivery`.
 
 Verify the signature against the **raw** body, before parsing JSON:
 
@@ -53,8 +54,10 @@ func isFromKeenVector(rawBody []byte, header, secret string) bool {
 
 :::
 
-Rotating the secret in the console takes effect on the next delivery — deploy the new
-secret first if you can't tolerate a few rejected deliveries.
+Rotating the secret in the console takes effect on the next delivery — there's no overlap
+window where both the old and new secret verify, so rotate during a quiet window:
+deliveries signed with the old secret in between fail verification on your side and are
+retried by KeenVector.
 
 ::: warning Event producers are rolling out
 The endpoint, signing and delivery log are live; individual services start emitting the
