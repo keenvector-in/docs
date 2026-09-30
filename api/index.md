@@ -64,20 +64,16 @@ KeenVector ──▶ your server               "events": endpoint, signing, test
 
 ## Developer pages in the console
 
-Keys and your webhook endpoint are managed in the console (business admin portal), not
-through the API:
+Keys and your webhook endpoint are managed in the console (tenant admin portal) under
+**Developer** in the sidebar, not through the API:
 
-| Page | Path | What it does |
+| Sidebar: Developer → | Path | What it does |
 |---|---|---|
 | **API keys** | `/developer` | Create, list and revoke API keys. |
 | **Webhooks** | `/developer/webhooks` | Your endpoint URL, event filter, signing secret, test send and recent deliveries. |
 | **SDK & code samples** | `/developer/sdk` | Copy-ready send and signature-verification snippets. |
 | **Connectors** | `/developer/connectors` | REST endpoints the AI assistant may call for live data. |
 
-::: info Open these by path
-The console sidebar does not link the Developer pages yet. Open them by path, for example
-`/developer/webhooks` after the console's address.
-:::
 
 ## Sections
 
