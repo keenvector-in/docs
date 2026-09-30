@@ -33,14 +33,16 @@ your backend ──POST /v1/messages──▶ message-api ──queue──▶ c
 
 ```text
 provider (Meta, mail) ──▶ KeenVector      "receiving webhooks": live, you configure it once
-KeenVector ──▶ your server               "events": not available yet
+KeenVector ──▶ your server               "events": endpoint, signing, test and log live; no platform events yet
 ```
 
 - **Provider to KeenVector.** Meta and other providers call KeenVector with inbound
   messages and delivery updates. You set this up once per connection. See
   [Receiving provider webhooks](/api/receiving-webhooks).
-- **KeenVector to your server.** Pushing message status and inbound events to your own
-  endpoint is **not available yet**. Until it is, poll `GET /v1/messages` for status. See
+- **KeenVector to your server.** You can register an endpoint in the console, get a
+  signing secret, send a signed test event and read the delivery log. But nothing on the
+  platform emits events yet: the only delivery your endpoint receives today is the
+  console's `webhook.test`. Keep polling `GET /v1/messages` for status. See
   [Events](/api/events).
 
 ## What's available
@@ -54,10 +56,28 @@ KeenVector ──▶ your server               "events": not available yet
 | Connect WhatsApp or Instagram with an API key (`/whatsapp/connections`, `/instagram/connections`) | Live |
 | Send on Instagram or website chat through the API | Not available |
 | Send WhatsApp templates through the API | Not available. Templates can be sent from campaigns and workflows in the console. |
-| Outbound event webhooks (status and inbound pushed to you) | Not available yet |
-| Self-serve API keys (create and revoke in the console) | Not available yet. KeenVector issues keys. |
+| Self-serve API keys (create, list and revoke in the console) | Live. Business admins create and revoke; any team member can see the list. See [Authentication](/api/authentication). |
+| Outbound webhooks: register an endpoint, signing secret, test event, delivery log | Live. See [Events](/api/events). |
+| Outbound events for messages, campaigns and workflows (`message.*`, `campaign.completed`, `workflow.completed`) | Not produced yet. You can subscribe to them, but no service sends them. |
 | Rate limits (`429`) | Not enforced yet. See [Rate limits](/api/rate-limits). |
 | Test or sandbox keys | Not available. See [Environments](/api/environments). |
+
+## Developer pages in the console
+
+Keys and your webhook endpoint are managed in the console (business admin portal), not
+through the API:
+
+| Page | Path | What it does |
+|---|---|---|
+| **API keys** | `/developer` | Create, list and revoke API keys. |
+| **Webhooks** | `/developer/webhooks` | Your endpoint URL, event filter, signing secret, test send and recent deliveries. |
+| **SDK & code samples** | `/developer/sdk` | Copy-ready send and signature-verification snippets. |
+| **Connectors** | `/developer/connectors` | REST endpoints the AI assistant may call for live data. |
+
+::: info Open these by path
+The console sidebar does not link the Developer pages yet. Open them by path, for example
+`/developer/webhooks` after the console's address.
+:::
 
 ## Sections
 

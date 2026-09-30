@@ -13,18 +13,27 @@ export KV_API_KEY=kv_live_...
 
 ## 1. Get an API key
 
-KeenVector issues API keys for now. Ask your KeenVector contact for a key for your tenant.
-Self-serve keys in the console are coming. Until then there is no console screen for this.
+You need to be a **business admin** in the console.
 
-If you run the platform locally, mint a key against your local auth-service:
+1. Open the console's **API keys** page at `/developer` (see
+   [Developer pages in the console](/api/#developer-pages-in-the-console)).
+2. Click **Create key**.
+3. Optionally enter a **Name** that says where the key is used, for example
+   "Order service (production)", and click **Create key**.
+4. Copy the key from **Copy your new key** and store it in your server's secret manager,
+   then click **Done**.
+
+The full key is shown only this once. Only its hash is stored, so a lost key cannot be
+recovered: create a new one. See [Authentication](/api/authentication).
+
+::: details Running the platform locally?
+You can also mint a key from the command line against your local auth-service:
 
 ```bash
 # from the core-engine repo
 go run ./deploy/local/issuekey -tenant <tenant-uuid> -addr localhost:9091
 ```
-
-The key is printed once. Only its hash is stored, so save it now. See
-[Authentication](/api/authentication).
+:::
 
 ## 2. Connect a channel
 
@@ -101,7 +110,8 @@ in the console.
 
 ## 4. Check the status
 
-There are no status webhooks yet ([Events](/api/events)), so you poll. `GET /v1/messages`
+No service sends message status events to your webhook endpoint yet
+([Events](/api/events)), so you poll. `GET /v1/messages`
 returns your newest messages first:
 
 ```bash

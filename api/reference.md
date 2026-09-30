@@ -36,8 +36,8 @@ Keyed by your published site's slug. Served by a different host from the Message
 
 Workflows, campaigns and templates, email domains, contacts, the webhook registration that
 wires your Meta app to KeenVector ([Receiving provider webhooks](/api/receiving-webhooks)),
-and API key management. Outbound event webhooks to your server aren't available yet
-([Events](/api/events)).
+API key management ([Authentication](/api/authentication)) and your outbound webhook
+endpoint ([Events](/api/events)).
 
 ## Errors
 

@@ -13,8 +13,8 @@ info:
       chat widget and your site's contact form call from the browser.
 
     Everything you do in the KeenVector console (workflows, campaigns, email domains, webhook
-    registration) uses the console's own session and is not part of this API. Outbound event
-    webhooks and self-serve API keys are not available yet — see [Overview](/api/).
+    registration, API keys, your outbound webhook endpoint) uses the console's own session and
+    is not part of this API — see [Overview](/api/).
 
     Response bodies of the Message API currently use Go-style field names (`ID`, `Status`, …);
     they move to snake_case before general availability ([Versioning](/api/versioning)).
@@ -374,8 +374,8 @@ components:
       scheme: bearer
       bearerFormat: kv_live_...
       description: |
-        `Authorization: Bearer <api_key>`. Keys are issued by KeenVector today (self-serve is
-        coming) — see [Authentication](/api/authentication). Server-side only: the Message API
+        `Authorization: Bearer <api_key>`. Business admins create and revoke keys in the
+        console — see [Authentication](/api/authentication). Server-side only: the Message API
         sends no CORS headers.
 
   parameters:

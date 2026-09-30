@@ -2,6 +2,20 @@
 
 Dates are when each change landed in this documentation, not the backend commit date.
 
+## 2026-10-01
+
+- **API keys are self-serve.** Business admins create, name and revoke keys on the console's
+  **API keys** page (`/developer`); any team member can see the list. Keys show a
+  `kv_live_xxxx` display prefix. Rotation no longer needs KeenVector. See
+  [Authentication](/api/authentication).
+- **Outbound webhooks: endpoint registration is live.** On **Webhooks**
+  (`/developer/webhooks`) you set your HTTPS endpoint and event filter, get and rotate a
+  `whsec_` signing secret, send a signed `webhook.test`, and read the delivery log.
+  Deliveries now carry `X-KeenVector-Delivery` for dedupe. No platform events
+  (`message.*`, `campaign.completed`, `workflow.completed`) are sent yet. See
+  [Events](/api/events).
+- New console page **SDK & code samples** (`/developer/sdk`). See [Code samples](/api/sdks).
+
 ## 2026-09-30
 
 - **Docs:** the API reference now lists only endpoints that exist. Removed `/whatsapp/messages`, `/whatsapp/templates`, `/campaigns/*`, `/keys`, `/verify` and the `X-Tenant-ID` scheme — none were callable with an API key. Added `/instagram/connections` and the website public API (leads, chat).

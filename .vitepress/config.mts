@@ -54,7 +54,7 @@ export default defineConfig({
         items: [
           { text: 'Two directions', link: '/api/webhooks' },
           { text: 'Receiving provider webhooks', link: '/api/receiving-webhooks' },
-          { text: 'Events to your server (not available yet)', link: '/api/events' },
+          { text: 'Events to your server', link: '/api/events' },
         ],
       },
       {

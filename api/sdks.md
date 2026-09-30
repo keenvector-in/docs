@@ -4,6 +4,12 @@ There are no official client libraries yet — call the HTTP API directly. The
 [interactive API reference](/reference.html) also generates a request snippet for every
 endpoint, in any language, straight from the [OpenAPI spec](/openapi.yaml).
 
+The console's **SDK & code samples** page (`/developer/sdk`, see
+[Developer pages in the console](/api/#developer-pages-in-the-console)) has the same send
+request in cURL, Node.js, Python and Go, filled in with your API base URL, plus
+signature-verification snippets for [events](/api/events#_4-verify-each-request). Its
+samples read the key from `KEENVECTOR_API_KEY`; the ones below use `KV_API_KEY`.
+
 All samples read the base URL from `KV_BASE_URL` (see [Environments](/api/environments)) and
 the key from `KV_API_KEY`. Keys are server-side only — never ship one to a browser or app.
 
@@ -128,7 +134,8 @@ await sendMessage({ channel: 'whatsapp', to: '919876543210', body: 'Your order #
 
 ## Check delivery status
 
-There are no delivery events to your server yet ([Events](/api/events)), so poll:
+No service sends message status events to your webhook endpoint yet
+([Events](/api/events)), so poll:
 
 ```bash
 curl "$KV_BASE_URL/v1/messages?limit=20" -H "Authorization: Bearer $KV_API_KEY"

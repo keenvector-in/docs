@@ -12,13 +12,41 @@ OAuth. The `Bearer ` prefix is case-sensitive.
 
 The key works on `/v1/messages`, `/whatsapp/connections` and `/instagram/connections`.
 
-## Getting a key
+## Managing keys in the console
 
-KeenVector issues keys for now. Ask your KeenVector contact. Self-serve key management in
-the console is **not available yet**.
+Keys live on the console's **API keys** page at `/developer` (see
+[Developer pages in the console](/api/#developer-pages-in-the-console)). Every key acts for
+your whole tenant.
 
-KeenVector stores only a hash of each key, so the full key is shown once, when it is
-issued. A lost key cannot be recovered. You get a new one instead.
+| Who | Can |
+|---|---|
+| Business admin | See keys, create keys, revoke keys |
+| Team member (business user) | See the key list only |
+
+### Create a key
+
+1. On **API keys**, click **Create key**.
+2. Enter a **Name** (optional, up to 64 characters), for example "Order service
+   (production)". A key without a name is listed as "Untitled key".
+3. Click **Create key**, copy the key and click **Done**.
+
+KeenVector stores only a hash of each key, so the full key is shown once, when you create
+it. A lost key cannot be recovered. Create a new one instead.
+
+### The key list
+
+Each key is listed with its **Name**, a **Key** column showing only its display prefix,
+**Created**, and **Status** (**Active**, or **Revoked** with the date). The display prefix is
+`kv_live_` plus the key's first four hex characters, for example `kv_live_3f9c••••••••`,
+which is enough to tell your keys apart and useless to anyone else. Revoked keys stay in
+the list.
+
+### Revoke a key
+
+1. Click **Revoke** on the key's row.
+2. Confirm with **Revoke key**.
+
+The key stops working immediately. Requests that use it get `401 invalid_api_key`.
 
 For local development against your own stack, see
 [Quickstart § Get an API key](/api/quickstart#_1-get-an-api-key).
@@ -34,11 +62,11 @@ your business.
 
 A tenant can have several active keys at once, so you can rotate without downtime:
 
-1. Ask KeenVector to issue a new key for your tenant.
-2. Deploy the new key and confirm your requests succeed with it.
-3. Ask KeenVector to revoke the old key. Revocation takes effect immediately.
+1. Create a new key on **API keys**.
+2. Deploy it and confirm your requests succeed with it.
+3. Revoke the old key. Revocation takes effect immediately.
 
-If a key leaks, ask for it to be revoked straight away, then rotate.
+If a key leaks, revoke it straight away, then create and deploy a replacement.
 
 Keys do not expire. They stay valid until revoked.
 
