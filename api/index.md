@@ -1,31 +1,78 @@
 # KeenVector API
 
-KeenVector is a multi-channel messaging platform. This section covers everything a
-developer needs to send and receive messages through the API — authentication, connecting
-a channel, sending messages, and receiving delivery/inbound events.
+KeenVector lets your backend send messages to your customers over the channels your
+business has connected, like WhatsApp and email, through one HTTP API. You connect your own
+provider accounts and KeenVector sends through them. You make one request, and the
+channel-specific delivery happens in the background.
 
-- **[Quickstart](/api/quickstart)** — get your API key and send your first message
-- **[Authentication](/api/authentication)** — how API keys work
-- **[Sending messages](/api/messages)** — the `/v1/messages` endpoint
-- **[Connecting WhatsApp](/api/channels/whatsapp)** — link your own WhatsApp
-  Business Account
-- **[Webhooks](/api/webhooks)** — receive delivery receipts and inbound messages
-- **[API reference](/api/reference)** — full endpoint reference
+New here? Start with the [Quickstart](/api/quickstart).
 
-## Base URL
+## Core concepts
 
-`https://api.keenvector.in` is used throughout these docs as a placeholder, along with a
-single unified path structure (`/v1/messages`, `/whatsapp/...`, `/webhooks/...`) — this is
-the API surface the platform is being built toward. The platform is not publicly hosted
-yet; your account team gives you the actual base URL for your environment.
-
-## Channels
-
-| Channel | Status |
+| Concept | What it is |
 |---|---|
-| [WhatsApp](/api/channels/whatsapp) | Available |
-| [Instagram](/api/channels/instagram) | Coming soon |
-| [SMS](/api/channels/sms) | Coming soon |
-| [Email](/api/channels/email) | Coming soon |
-| [Slack](/api/channels/slack) | Coming soon |
-| RCS, Voice, Push | Planned |
+| **Tenant** | Your business's workspace on KeenVector. Every message, contact, connection and key belongs to exactly one tenant. |
+| **API key** | A `kv_live_...` secret that identifies your tenant on every request. See [Authentication](/api/authentication). |
+| **Channel** | A way to reach a customer: `whatsapp` and `email` can be sent through the API today. See [Connectors](/api/connectors/). |
+| **Connection** | Your own provider account linked to your tenant: a WhatsApp Business Account, or a verified email sending domain. Without one, sends on that channel fail. |
+| **Message** | One outbound send. It is accepted as `QUEUED` and then moves to `SENT` or `FAILED`. See [Messages](/api/messages). |
+| **Contact** | A person your business talks to. Contacts are managed in the console. There is no public contacts API yet. |
+| **Workflow** | An automation built in the console, for example "when a website lead arrives, send a WhatsApp". See [Workflows](/api/workflows). |
+| **Webhooks** | These go in two directions. See below. |
+
+### How a send flows
+
+```text
+your backend ──POST /v1/messages──▶ message-api ──queue──▶ channel worker ──▶ Meta / mail server
+     ▲                                  │                         │
+     │            202 + message (QUEUED)│                         │ verdict
+     └──────────GET /v1/messages◀───────┴──── status: SENT/FAILED ◀┘
+```
+
+### Webhooks in two directions
+
+```text
+provider (Meta, mail) ──▶ KeenVector      "receiving webhooks": live, you configure it once
+KeenVector ──▶ your server               "events": not available yet
+```
+
+- **Provider to KeenVector.** Meta and other providers call KeenVector with inbound
+  messages and delivery updates. You set this up once per connection. See
+  [Receiving provider webhooks](/api/receiving-webhooks).
+- **KeenVector to your server.** Pushing message status and inbound events to your own
+  endpoint is **not available yet**. Until it is, poll `GET /v1/messages` for status. See
+  [Events](/api/events).
+
+## What's available
+
+| Capability | Status |
+|---|---|
+| Send WhatsApp free-form text (`POST /v1/messages`, `channel: "whatsapp"`) | Live |
+| Send email (`POST /v1/messages`, `channel: "email"`) | Live. Needs a verified sending domain. |
+| List messages and their status (`GET /v1/messages`) | Live |
+| Idempotent retries (`Idempotency-Key` header) | Live |
+| Connect WhatsApp or Instagram with an API key (`/whatsapp/connections`, `/instagram/connections`) | Live |
+| Send on Instagram or website chat through the API | Not available |
+| Send WhatsApp templates through the API | Not available. Templates can be sent from campaigns and workflows in the console. |
+| Outbound event webhooks (status and inbound pushed to you) | Not available yet |
+| Self-serve API keys (create and revoke in the console) | Not available yet. KeenVector issues keys. |
+| Rate limits (`429`) | Not enforced yet. See [Rate limits](/api/rate-limits). |
+| Test or sandbox keys | Not available. See [Environments](/api/environments). |
+
+## Sections
+
+**Get started:** [Quickstart](/api/quickstart) · [Authentication](/api/authentication) ·
+[Environments & base URL](/api/environments)
+
+**Sending:** [Messages](/api/messages) · [Idempotency](/api/idempotency) ·
+[Pagination](/api/pagination) · [Errors](/api/errors) · [Rate limits](/api/rate-limits) ·
+[Versioning](/api/versioning)
+
+**Channels:** [Connectors overview](/api/connectors/) · [WhatsApp](/api/channels/whatsapp) ·
+[Instagram](/api/channels/instagram) · [Email](/api/channels/email) ·
+[Website chat & forms](/api/channels/website)
+
+**Webhooks and automation:** [Receiving provider webhooks](/api/receiving-webhooks) ·
+[Events](/api/events) · [Workflows](/api/workflows) · [Recipes](/api/recipes/)
+
+**Reference:** [Interactive API reference](/reference.html)

@@ -2,58 +2,44 @@ openapi: 3.1.0
 info:
   title: KeenVector API
   version: "1.0"
-  summary: Multi-channel messaging API — WhatsApp today, SMS/email/Instagram/Slack planned.
+  summary: Send WhatsApp and email messages, connect channels, and drive website chat and forms.
   description: |
-    KeenVector is a technology provider, not a sender in its own name: you connect your own
-    channel account (e.g. a WhatsApp Business Account), KeenVector routes the API call,
-    verifies provider signatures, and tracks delivery.
+    **This spec documents only endpoints that exist in the backend today.** Two surfaces:
 
-    **This spec documents only endpoints that exist in the backend today.** Two auth
-    patterns currently coexist:
+    - **Message API** (`message-api`) — your server calls it with an API key
+      (`Authorization: Bearer kv_live_…`): send and list messages, connect WhatsApp and
+      Instagram accounts.
+    - **Website public API** (`tenant-site`) — anonymous, keyed by your site's slug: what the
+      chat widget and your site's contact form call from the browser.
 
-    - `POST/GET /v1/messages` (the `message-api` service) is the one endpoint meant for
-      external callers — it requires a real `Authorization: Bearer` API key.
-    - Every other path here (`/whatsapp/*`, `/campaigns/*`, `/webhooks/*`, `/keys`, `/verify`)
-      is served by an internal service that currently trusts a plain `X-Tenant-ID` header
-      instead of the API key — a stand-in the code itself calls out as not-yet-real auth
-      (`// Tenant comes from the X-Tenant-ID header — a stand-in for the real auth
-      middleware, which does not exist yet`). They are included so the shape is documented,
-      but tagged **Preview** and are not yet safe to expose to the public internet behind a
-      real tenant boundary.
+    Everything you do in the KeenVector console (workflows, campaigns, email domains, webhook
+    registration) uses the console's own session and is not part of this API. Outbound event
+    webhooks and self-serve API keys are not available yet — see [Overview](/api/).
 
-    SMS, Email, Instagram, Slack, RCS, voice and push are **on the roadmap** — the `channel`
-    field on `POST /v1/messages` already reserves the enum values, but only `whatsapp` is
-    implemented. Contacts, Media, Organizations/Tenant self-service and Analytics have no
-    HTTP surface yet (tenant management is gRPC-internal only). See the
-    [Quickstart](/api/quickstart) and [API overview](/api/) for the human-readable version
-    of this same map.
+    Response bodies of the Message API currently use Go-style field names (`ID`, `Status`, …);
+    they move to snake_case before general availability ([Versioning](/api/versioning)).
   contact:
     name: KeenVector
     url: https://keenvector.in
   license:
     name: Proprietary
+    url: https://keenvector.in/terms
 
 servers:
   - url: https://api.keenvector.in
-    description: >-
-      Placeholder. The platform is not publicly hosted yet — your account team gives you
-      the real base URL for your environment. Paths below are correct; the host is not.
+    description: Placeholder — the production host isn't published yet; your KeenVector contact gives you the base URL.
+  - url: http://localhost:8085
+    description: Local development (message-api).
 
 tags:
   - name: Messages
-    description: Send and list messages through the unified `/v1/messages` endpoint. The only endpoint with real tenant-key auth today.
-  - name: WhatsApp
-    description: Connect a WhatsApp Business Account and send/list WhatsApp messages. **Preview** — see the auth note above.
-  - name: Templates
-    description: Manage WhatsApp message templates (submit for Meta approval, list approval status). **Preview**.
-  - name: Campaigns
-    description: Bulk-send an approved template to many recipients. **Preview**.
-  - name: Webhook Configuration
-    description: Register your provider app secret and inspect recently received inbound events. **Preview**.
-  - name: Webhook Receiver
-    description: The endpoints Meta/Slack themselves call — not endpoints you call from your integration.
+    description: Send and list messages. WhatsApp (free text) and email are live.
+  - name: Connections
+    description: Connect your WhatsApp Business Account or Instagram professional account with an API key. The console's Integrations page does the same for people.
+  - name: Website (public)
+    description: Anonymous endpoints of your published website — lead form and chat. Served by a different host from the Message API.
   - name: Health
-    description: Liveness/readiness probes, one per service.
+    description: Liveness probe.
 
 security:
   - bearerAuth: []
@@ -65,10 +51,15 @@ paths:
       tags: [Messages]
       summary: Send a message
       description: |
-        Sends through the connected channel account for `channel`. A `201` means the
-        request was accepted and forwarded — not that the provider delivered it. Poll
-        `GET /v1/messages` or check [Webhooks](/api/webhooks) for the delivery outcome.
-      security: [{ bearerAuth: [] }]
+        Queues the message for the connected account on `channel` and returns `202` with the
+        stored message (`Status: QUEUED`). `QUEUED` means accepted, not delivered — poll
+        `GET /v1/messages` for `SENT` or `FAILED`.
+
+        - `whatsapp`: free text only; it reaches the recipient only within 24 hours of their
+          last message to you (Meta's customer-service window). Templates can't be sent through
+          this API yet.
+        - `email`: needs a verified sending domain (console → Email domains); `subject` is
+          required. Sent from `no-reply@<your domain>`.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -79,499 +70,313 @@ paths:
               $ref: '#/components/schemas/SendMessageRequest'
             examples:
               whatsapp:
-                summary: WhatsApp free-form text
-                value:
-                  channel: whatsapp
-                  to: "919876543210"
-                  body: "Hi! Your order #4471 has shipped."
+                summary: WhatsApp free text
+                value: { channel: whatsapp, to: "919876543210", body: "Hi! Your order #4471 has shipped." }
+              email:
+                summary: Email
+                value: { channel: email, to: "asha@example.com", subject: "Order #4471 shipped", body: "Your order is on its way." }
       responses:
-        '201':
-          description: Accepted and forwarded to the channel provider.
+        '202':
+          description: Accepted and queued.
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Message'
+              schema: { $ref: '#/components/schemas/Message' }
               examples:
-                sent:
+                queued:
                   value:
                     ID: e6b4ce10-d887-4b22-8e5a-e4892eff8546
                     TenantID: 8f14e45f-ceea-4c9d-b2fa-6ac1f4b5a2b0
-                    IdempotencyKey: order-4471-confirmation
+                    IdempotencyKey: order-4471-shipped
                     Channel: whatsapp
                     To: "919876543210"
+                    Subject: ""
                     Body: "Hi! Your order #4471 has shipped."
-                    Status: SENT
-                    ProviderMessageID: wamid.HBgMOTE...
+                    Status: QUEUED
+                    ProviderMessageID: ""
                     Error: ""
-                    CreatedAt: "2026-09-06T09:42:07Z"
+                    CreatedAt: "2026-09-30T09:42:07Z"
         '400':
-          $ref: '#/components/responses/InvalidRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '502':
-          description: The provider rejected the request outright (not the same as a `FAILED` status on an accepted message).
+          description: Invalid request. Some validation errors are still plain text rather than the JSON error shape — handle both.
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                send_failed:
-                  value: { error_code: send_failed, message: "provider returned 470: recipient has not opted in" }
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+            text/plain:
+              schema: { type: string, example: "channel, to and body are required" }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503':
+          description: The message could not be queued. Nothing was sent — retry with the same Idempotency-Key.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
     get:
       operationId: listMessages
       tags: [Messages]
       summary: List messages
-      description: Lists the caller's tenant's messages, newest first.
-      security: [{ bearerAuth: [] }]
+      description: Your tenant's messages, newest first. Page with `before` = the last `ID` you received.
+      parameters:
+        - name: before
+          in: query
+          description: Return messages older than this message id.
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          description: Page size, 1–200 (default 50).
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
       responses:
         '200':
           description: OK
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Message'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+              schema: { type: array, items: { $ref: '#/components/schemas/Message' } }
+        '400':
+          description: "`before` isn't a message id (plain text body)."
+          content:
+            text/plain:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /whatsapp/connections:
     post:
       operationId: connectWhatsApp
-      tags: [WhatsApp]
+      tags: [Connections]
       summary: Connect a WhatsApp Business Account
-      description: |
-        Stores your WABA credentials. Calling this again with a new `access_token` rotates
-        it in place — there is no separate rotate endpoint.
-      security: [{ tenantHeader: [] }]
+      description: Stores your WABA credentials. Calling it again with a new `access_token` replaces the stored one.
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/ConnectWhatsAppRequest'
+            schema: { $ref: '#/components/schemas/ConnectWhatsAppRequest' }
       responses:
-        '204':
+        '201':
           description: Connected.
-        '400':
-          $ref: '#/components/responses/InvalidRequest'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WhatsAppConnection' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
     get:
       operationId: getWhatsAppConnection
-      tags: [WhatsApp]
-      summary: Get the current connection
-      security: [{ tenantHeader: [] }]
+      tags: [Connections]
+      summary: Get the WhatsApp connection
       responses:
         '200':
           description: OK
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/WhatsAppConnection'
-        '404':
-          $ref: '#/components/responses/NotFound'
+              schema: { $ref: '#/components/schemas/WhatsAppConnection' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
     delete:
       operationId: disconnectWhatsApp
-      tags: [WhatsApp]
-      summary: Disconnect
-      description: Deletes the stored access token. The token stays valid at Meta until revoked there too.
-      security: [{ tenantHeader: [] }]
+      tags: [Connections]
+      summary: Disconnect WhatsApp
+      description: Deletes the stored access token. The token stays valid at Meta until you revoke it there.
       responses:
-        '204':
-          description: Disconnected.
+        '204': { description: Disconnected. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
-  /whatsapp/messages:
+  /instagram/connections:
     post:
-      operationId: sendWhatsAppText
-      tags: [WhatsApp]
-      summary: Send free-form text directly (channel-specific route)
-      description: |
-        Equivalent to `POST /v1/messages` with `"channel": "whatsapp"`, called on the
-        whatsapp service directly rather than through message-api. Only reaches a customer
-        within 24h of their last message to you.
-      security: [{ tenantHeader: [] }]
+      operationId: connectInstagram
+      tags: [Connections]
+      summary: Connect an Instagram professional account
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              required: [to, body]
-              properties:
-                to: { type: string, example: "919876543210" }
-                body: { type: string, example: "Hi! Your order has shipped." }
+            schema: { $ref: '#/components/schemas/ConnectInstagramRequest' }
       responses:
         '201':
-          description: Created
+          description: Connected.
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/WhatsAppMessageEvent' }
-        '400':
-          $ref: '#/components/responses/InvalidRequest'
-        '409':
-          $ref: '#/components/responses/WhatsAppNotConnected'
-        '502':
-          $ref: '#/components/responses/ProviderError'
+              schema: { $ref: '#/components/schemas/InstagramConnection' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
     get:
-      operationId: listWhatsAppMessages
-      tags: [WhatsApp]
-      summary: List WhatsApp send events
-      security: [{ tenantHeader: [] }]
+      operationId: getInstagramConnection
+      tags: [Connections]
+      summary: Get the Instagram connection
       responses:
         '200':
           description: OK
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/WhatsAppMessageEvent' }
-
-  /whatsapp/messages/template:
-    post:
-      operationId: sendWhatsAppTemplate
-      tags: [WhatsApp]
-      summary: Send an approved template message
-      description: |
-        The only kind of message that can reach a customer with no open 24h session.
-        `language_code` defaults to `en_US` if omitted — Meta's auto-provisioned
-        `hello_world` template only works from Meta's own test number
-        (`#131058` if you try it from your real number); submit your own template first.
-      security: [{ tenantHeader: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [to, template_name]
-              properties:
-                to: { type: string, example: "919876543210" }
-                template_name: { type: string, example: order_confirmation }
-                language_code: { type: string, example: en_US, default: en_US }
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/WhatsAppMessageEvent' }
-        '400':
-          $ref: '#/components/responses/InvalidRequest'
-        '409':
-          $ref: '#/components/responses/WhatsAppNotConnected'
-        '502':
-          $ref: '#/components/responses/ProviderError'
-
-  /whatsapp/templates:
-    get:
-      operationId: listWhatsAppTemplates
-      tags: [Templates]
-      summary: List templates and their approval status
-      description: Straight from Meta — not cached or stored on our side.
-      security: [{ tenantHeader: [] }]
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/Template' }
-        '409':
-          $ref: '#/components/responses/WhatsAppNotConnected'
-    post:
-      operationId: submitWhatsAppTemplate
-      tags: [Templates]
-      summary: Submit a new template for Meta's approval
-      description: |
-        `components` follows Meta's own template-components schema and is passed through
-        unmodified — see
-        [Meta's template docs](https://developers.facebook.com/docs/whatsapp/business-management-api/message-templates).
-      security: [{ tenantHeader: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, category, language, components]
-              properties:
-                name: { type: string, example: order_confirmation }
-                category: { type: string, example: UTILITY }
-                language: { type: string, example: en_US }
-                components:
-                  type: array
-                  items: { type: object, additionalProperties: true }
-      responses:
-        '201':
-          description: Submitted
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Template' }
-        '400':
-          $ref: '#/components/responses/InvalidRequest'
-        '409':
-          $ref: '#/components/responses/WhatsAppNotConnected'
-
-  /campaigns:
-    post:
-      operationId: createCampaign
-      tags: [Campaigns]
-      summary: Create a campaign
-      security: [{ tenantHeader: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name: { type: string }
-                template_name: { type: string }
-                language_code: { type: string }
-                recipients:
-                  type: array
-                  items: { type: string }
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Campaign' }
-        '400':
-          $ref: '#/components/responses/InvalidRequest'
-    get:
-      operationId: listCampaigns
-      tags: [Campaigns]
-      summary: List campaigns
-      security: [{ tenantHeader: [] }]
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/Campaign' }
-
-  /campaigns/{campaignID}:
-    get:
-      operationId: getCampaign
-      tags: [Campaigns]
-      summary: Get a campaign
-      security: [{ tenantHeader: [] }]
-      parameters:
-        - $ref: '#/components/parameters/CampaignID'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Campaign' }
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /campaigns/{campaignID}/targets:
-    get:
-      operationId: listCampaignTargets
-      tags: [Campaigns]
-      summary: List a campaign's recipients and per-recipient status
-      security: [{ tenantHeader: [] }]
-      parameters:
-        - $ref: '#/components/parameters/CampaignID'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/CampaignTarget' }
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /campaigns/{campaignID}/trigger:
-    post:
-      operationId: triggerCampaign
-      tags: [Campaigns]
-      summary: Send the campaign's template to every recipient
-      description: Blocks until every recipient's send attempt finishes.
-      security: [{ tenantHeader: [] }]
-      parameters:
-        - $ref: '#/components/parameters/CampaignID'
-      responses:
-        '200':
-          description: OK — campaign after triggering.
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Campaign' }
-        '400':
-          $ref: '#/components/responses/InvalidRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /webhooks/tenants/{tenantID}/webhook-config/{provider}:
-    post:
-      operationId: registerWebhookConfig
-      tags: [Webhook Configuration]
-      summary: Register your provider app secret
-      description: |
-        Stores your app secret (never as plaintext) and returns a `verify_token` — paste
-        it plus `callback_url` into your own provider App's webhook settings. KeenVector
-        never sees your provider App's dashboard.
-      security: [{ tenantHeader: [] }]
-      parameters:
-        - $ref: '#/components/parameters/TenantIDPath'
-        - $ref: '#/components/parameters/Provider'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [app_secret]
-              properties:
-                app_secret: { type: string, description: "From your provider App's dashboard (e.g. Meta App Settings → Basic)." }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/WebhookConfig' }
-        '400':
-          $ref: '#/components/responses/InvalidRequest'
-    get:
-      operationId: getWebhookConfig
-      tags: [Webhook Configuration]
-      summary: View your current webhook config
-      description: Never returns `app_secret` — it stays write-only.
-      security: [{ tenantHeader: [] }]
-      parameters:
-        - $ref: '#/components/parameters/TenantIDPath'
-        - $ref: '#/components/parameters/Provider'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/WebhookConfig' }
-        '404':
-          $ref: '#/components/responses/NotFound'
+              schema: { $ref: '#/components/schemas/InstagramConnection' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
     delete:
-      operationId: deleteWebhookConfig
-      tags: [Webhook Configuration]
-      summary: Disconnect a webhook
-      security: [{ tenantHeader: [] }]
-      parameters:
-        - $ref: '#/components/parameters/TenantIDPath'
-        - $ref: '#/components/parameters/Provider'
+      operationId: disconnectInstagram
+      tags: [Connections]
+      summary: Disconnect Instagram
       responses:
-        '204':
-          description: Disconnected.
+        '204': { description: Disconnected. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
-  /webhooks/tenants/{tenantID}/webhook-config/{provider}/recent:
+  /public/sites/{slug}:
+    servers:
+      - url: https://sites.keenvector.in
+        description: Placeholder host of the website public API (tenant-site); locally http://localhost:8083.
     get:
-      operationId: listRecentWebhookEvents
-      tags: [Webhook Configuration]
-      summary: Last 20 verified inbound events
-      description: |
-        The only trustworthy connectivity test — KeenVector cannot fabricate a signed
-        request that proves anything about your own secret. Trigger a real event from your
-        provider's dashboard, then check this endpoint.
-      security: [{ tenantHeader: [] }]
-      parameters:
-        - $ref: '#/components/parameters/TenantIDPath'
-        - $ref: '#/components/parameters/Provider'
+      operationId: getPublicSite
+      tags: [Website (public)]
+      summary: Get a published site
+      description: The published site config the widget and tenant pages render. Cached for 60 seconds.
+      security: []
+      parameters: [{ $ref: '#/components/parameters/Slug' }]
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items: { $ref: '#/components/schemas/WebhookEvent' }
+                type: object
+                properties:
+                  slug: { type: string }
+                  config: { type: object, description: The published SiteConfig. }
+        '404': { $ref: '#/components/responses/NotFound' }
 
-  /webhooks/{provider}/{tenantID}:
-    get:
-      operationId: verifyWebhookHandshake
-      tags: [Webhook Receiver]
-      summary: Provider GET handshake (Meta-style only)
-      description: |
-        Called by Meta/Instagram during webhook setup with `hub.verify_token` — not an
-        endpoint your own integration calls. Slack has no GET step (404s here); it verifies
-        via the first POST body instead.
-      security: []
-      parameters:
-        - $ref: '#/components/parameters/Provider'
-        - $ref: '#/components/parameters/TenantIDPath'
-        - name: hub.verify_token
-          in: query
-          required: true
-          schema: { type: string }
-        - name: hub.challenge
-          in: query
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Echoes `hub.challenge` back.
-          content:
-            text/plain: { schema: { type: string } }
-        '403':
-          description: Verify token mismatch.
-        '404':
-          description: Provider not found, or doesn't support a GET handshake.
+  /public/sites/{slug}/leads:
+    servers:
+      - url: https://sites.keenvector.in
+        description: Placeholder host of the website public API (tenant-site); locally http://localhost:8083.
     post:
-      operationId: receiveWebhookCallback
-      tags: [Webhook Receiver]
-      summary: Provider event callback
-      description: >-
-        Called by Meta/Slack directly, signed with your app secret. Not an endpoint your own
-        integration calls.
+      operationId: createLead
+      tags: [Website (public)]
+      summary: Submit the contact form
+      description: |
+        Stores the lead, files it under the matching contact and starts your **Form Submitted**
+        workflows. Give at least a phone or an email. `website` is a honeypot: leave it empty
+        (a filled one is accepted and silently dropped).
       security: []
-      parameters:
-        - $ref: '#/components/parameters/Provider'
-        - $ref: '#/components/parameters/TenantIDPath'
+      parameters: [{ $ref: '#/components/parameters/Slug' }]
       requestBody:
         required: true
         content:
           application/json:
-            schema: { type: object, additionalProperties: true }
+            schema: { $ref: '#/components/schemas/LeadRequest' }
+      responses:
+        '202':
+          description: |
+            Accepted. Usually no body. When the phone already belongs to someone who has messaged you on
+            WhatsApp, the body asks the visitor to prove it by sending `verify_code` from `claim_address`.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verify_code: { type: string }
+                  claim_address: { type: string }
+                  claim_kind: { type: string, example: whatsapp }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /public/sites/{slug}/chat:
+    servers:
+      - url: https://sites.keenvector.in
+        description: Placeholder host of the website public API (tenant-site); locally http://localhost:8083.
+    post:
+      operationId: sendChatMessage
+      tags: [Website (public)]
+      summary: Send a website chat message
+      description: |
+        One visitor message. Pass the same `session_id` for a conversation and, from the second
+        message on, the `session_token` you got back in the `X-Chat-Token` header. Rate limited
+        to 20 requests per minute per IP. When your workflows handle the web channel the reply
+        arrives asynchronously (`queued: true`) — poll the session; otherwise the AI assistant
+        answers inline.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+        - name: X-Chat-Token
+          in: header
+          required: false
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message, session_id]
+              properties:
+                message: { type: string }
+                session_id: { type: string }
       responses:
         '200':
-          description: Accepted (or, for Slack's `url_verification` handshake, echoes the challenge).
-        '403':
-          description: Signature verification failed.
+          description: Answered inline.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply: { type: string }
+                  handoff: { type: boolean }
+                  session_token: { type: string }
+        '202':
+          description: Queued for your workflows — poll for the reply.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queued: { type: boolean }
+                  session_token: { type: string }
+        '404': { description: "Site not found, or chat is disabled for it (`chat_disabled`)." }
+        '429': { description: Too many requests from this IP. }
+
+  /public/sites/{slug}/chat/{session}:
+    servers:
+      - url: https://sites.keenvector.in
+        description: Placeholder host of the website public API (tenant-site); locally http://localhost:8083.
+    get:
+      operationId: pollChat
+      tags: [Website (public)]
+      summary: Poll a chat session for replies
+      description: Bot replies after `after` (a message id). Rate limited to 240 requests per minute per IP.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+        - { name: session, in: path, required: true, schema: { type: string } }
+        - { name: after, in: query, schema: { type: string, format: uuid } }
+        - { name: X-Chat-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string, format: uuid }
+                        text: { type: string }
+                        at: { type: string, format: date-time }
 
   /healthz:
     get:
-      operationId: healthCheck
+      operationId: health
       tags: [Health]
-      summary: Liveness/readiness probe
-      description: Every service exposes this on its own port. Not on the public API surface.
+      summary: Liveness
       security: []
       responses:
-        '200':
-          description: Healthy.
-        '503':
-          description: Not ready (e.g. database unreachable).
+        '200': { description: Healthy. }
+        '503': { description: Not ready (e.g. database unreachable). }
 
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: kv_live_... / kv_test_...
+      bearerFormat: kv_live_...
       description: |
-        `Authorization: Bearer <api_key>`. The only real tenant-auth mechanism in the
-        platform today. See [Authentication](/api/authentication).
-    tenantHeader:
-      type: apiKey
-      in: header
-      name: X-Tenant-ID
-      description: >-
-        **Development stand-in, not production auth.** The handler comment in every
-        service that uses this header says so directly: "a stand-in for the real auth
-        middleware, which does not exist yet." Treated here as a distinct scheme from
-        `bearerAuth` so Scalar's "Try it" doesn't imply these routes are API-key protected.
+        `Authorization: Bearer <api_key>`. Keys are issued by KeenVector today (self-serve is
+        coming) — see [Authentication](/api/authentication). Server-side only: the Message API
+        sends no CORS headers.
 
   parameters:
     IdempotencyKey:
@@ -579,51 +384,43 @@ components:
       in: header
       required: false
       description: |
-        Reusing the same key for the same tenant within 24h returns the original result
-        instead of sending again. Pick a key naturally unique to the business event (an
-        order id), not a fresh random value per attempt.
-      schema: { type: string, example: order-4471-confirmation }
-    TenantIDPath:
-      name: tenantID
+        Reusing a key within 2 hours returns the original message instead of sending again.
+        Use one key per business event (e.g. `order-4471-shipped`) and reuse it on every retry —
+        not a fresh random value per attempt. See [Idempotency](/api/idempotency).
+      schema: { type: string, example: order-4471-shipped }
+    Slug:
+      name: slug
       in: path
       required: true
-      schema: { type: string, format: uuid }
-    CampaignID:
-      name: campaignID
-      in: path
-      required: true
-      schema: { type: string, format: uuid }
-    Provider:
-      name: provider
-      in: path
-      required: true
-      schema: { type: string, enum: [whatsapp, instagram, slack] }
+      description: Your published site's address, e.g. `acme-bakery`.
+      schema: { type: string }
 
   schemas:
     SendMessageRequest:
       type: object
       required: [channel, to, body]
       properties:
-        channel:
-          type: string
-          description: Only `whatsapp` is implemented; other values are reserved for planned channels.
-          enum: [whatsapp]
+        channel: { type: string, enum: [whatsapp, email] }
         to:
           type: string
-          description: Recipient in international format, digits only.
-          example: "919876543210"
-        body:
+          description: WhatsApp — international format, digits only (`919876543210`). Email — an address.
+        subject:
           type: string
-          example: "Hello!"
+          description: Required for `email`; rejected for `whatsapp`.
+        body: { type: string }
 
     Message:
       type: object
+      description: |
+        Field names are Go-style today and will move to snake_case before GA. Known issue: `Subject`
+        reads back empty from `GET /v1/messages` and idempotent replays (the stored value is correct).
       properties:
         ID: { type: string, format: uuid }
         TenantID: { type: string, format: uuid }
         IdempotencyKey: { type: string }
-        Channel: { type: string, example: whatsapp }
+        Channel: { type: string, enum: [whatsapp, email] }
         To: { type: string }
+        Subject: { type: string }
         Body: { type: string }
         Status: { type: string, enum: [QUEUED, SENT, FAILED] }
         ProviderMessageID: { type: string }
@@ -638,85 +435,58 @@ components:
         phone_number_id: { type: string }
         access_token:
           type: string
-          description: A temporary token (24h) from API Setup, or a permanent System User token for anything beyond testing.
+          description: A permanent System User token (the 24-hour token from API Setup only suits a quick test).
 
     WhatsAppConnection:
       type: object
       properties:
-        WABAID: { type: string }
-        PhoneNumberID: { type: string }
-        Status: { type: string, enum: [CONNECTED, REAUTH_REQUIRED] }
+        tenant_id: { type: string, format: uuid }
+        waba_id: { type: string }
+        phone_number_id: { type: string }
+        status: { type: string, example: CONNECTED }
 
-    WhatsAppMessageEvent:
+    ConnectInstagramRequest:
+      type: object
+      required: [ig_user_id, access_token]
+      properties:
+        ig_user_id: { type: string }
+        access_token: { type: string }
+
+    InstagramConnection:
       type: object
       properties:
-        ID: { type: string, format: uuid }
-        TenantID: { type: string, format: uuid }
-        To: { type: string }
-        Type: { type: string, enum: [text, template] }
-        ProviderMessageID: { type: string }
-        CreatedAt: { type: string, format: date-time }
+        tenant_id: { type: string, format: uuid }
+        ig_user_id: { type: string }
+        status: { type: string, example: CONNECTED }
 
-    Template:
+    LeadRequest:
       type: object
       properties:
-        Name: { type: string }
-        Category: { type: string }
-        Language: { type: string }
-        Status: { type: string, enum: [PENDING, APPROVED, REJECTED] }
-
-    Campaign:
-      type: object
-      properties:
-        ID: { type: string, format: uuid }
-        TenantID: { type: string, format: uuid }
-        Name: { type: string }
-        TemplateName: { type: string }
-        LanguageCode: { type: string }
-        Status: { type: string, enum: [DRAFT, TRIGGERED, COMPLETED] }
-        CreatedAt: { type: string, format: date-time }
-
-    CampaignTarget:
-      type: object
-      properties:
-        Recipient: { type: string }
-        Status: { type: string, enum: [PENDING, SENT, FAILED] }
-        ProviderMessageID: { type: string }
-        Error: { type: string }
-
-    WebhookConfig:
-      type: object
-      properties:
-        callback_url: { type: string, example: /webhooks/whatsapp/8f14e45f-ceea-4c9d-b2fa-6ac1f4b5a2b0 }
-        verify_token: { type: string }
-
-    WebhookEvent:
-      type: object
-      properties:
-        Provider: { type: string, example: whatsapp }
-        ProviderMessageID: { type: string }
-        Status: { type: string, example: delivered, description: "sent | delivered | read | failed for status events; message type for inbound; APPROVED/REJECTED for template status" }
-        OccurredAt: { type: string, format: date-time }
-        ReceivedAt: { type: string, format: date-time }
+        name: { type: string }
+        phone: { type: string, description: Any format; non-digits are stripped. }
+        email: { type: string }
+        message: { type: string }
+        website: { type: string, description: Honeypot — leave empty. }
 
     ErrorResponse:
       type: object
       properties:
         error_code:
           type: string
-          description: Stable, public. See [Error handling](/api/errors) for the full table.
+          description: Stable, machine-readable. See [Errors](/api/errors).
         message:
           type: string
+          description: Human-readable; says what to do next.
 
   responses:
     InvalidRequest:
-      description: The request body or a field failed validation.
+      description: A field failed validation.
       content:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorResponse' }
           examples:
             invalid_request:
-              value: { error_code: invalid_request, message: 'field "channel" failed validation' }
+              value: { error_code: invalid_request, message: "waba_id, phone_number_id and access_token are required" }
     Unauthorized:
       description: Missing or invalid API key.
       content:
@@ -728,23 +498,7 @@ components:
             invalid_api_key:
               value: { error_code: invalid_api_key, message: "the api key is invalid or revoked" }
     NotFound:
-      description: The resource doesn't exist for this tenant.
+      description: Not found for your tenant.
       content:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorResponse' }
-    WhatsAppNotConnected:
-      description: No WhatsApp Business Account connected for this tenant yet.
-      content:
-        application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
-          examples:
-            whatsapp_not_connected:
-              value: { error_code: whatsapp_not_connected, message: "connect a WhatsApp Business Account before sending" }
-    ProviderError:
-      description: KeenVector reached the provider and it rejected the request outright.
-      content:
-        application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
-          examples:
-            provider_error:
-              value: { error_code: provider_error, message: "provider returned 470" }

@@ -1,53 +1,62 @@
-# Quickstart: send your first WhatsApp message
+# Quickstart
 
-KeenVector is a technology provider, not a message sender in our own name — you connect
-**your own** WhatsApp Business Account, and every message goes out under your business,
-your number, your Meta App. We route the API call, verify signatures, and record delivery
-status; the WhatsApp relationship is between you and Meta.
+Send your first message in four steps: get a key, connect a channel, send, and check the
+status.
 
-Three steps: get an API key, connect your WhatsApp Business Account, send a message.
+The examples use `$KV_BASE_URL` for the API host and `$KV_API_KEY` for your key. See
+[Environments](/api/environments) for the value of `$KV_BASE_URL`.
+
+```bash
+export KV_BASE_URL=http://localhost:8085   # local dev; your KeenVector contact gives you the hosted one
+export KV_API_KEY=kv_live_...
+```
 
 ## 1. Get an API key
 
-Your account team issues your first live key when your workspace is set up. Keep it secret
-— it authenticates every request as your business.
+KeenVector issues API keys for now. Ask your KeenVector contact for a key for your tenant.
+Self-serve keys in the console are coming. Until then there is no console screen for this.
 
-```
-Authorization: Bearer kv_live_...
-```
-
-See [Authentication](/api/authentication) for details.
-
-## 2. Connect your WhatsApp Business Account
-
-You need:
-- A Meta Business Account and a WhatsApp Business Account (WABA) — Meta's own signup, not
-  ours
-- Your own Meta App (Facebook Developers) with the WhatsApp product added
-- From that App: **App Secret** (App Settings → Basic) and an **access token** (WhatsApp →
-  API Setup)
+If you run the platform locally, mint a key against your local auth-service:
 
 ```bash
-curl -X POST https://api.keenvector.in/whatsapp/connections \
-  -H "Authorization: Bearer kv_live_..." \
+# from the core-engine repo
+go run ./deploy/local/issuekey -tenant <tenant-uuid> -addr localhost:9091
+```
+
+The key is printed once. Only its hash is stored, so save it now. See
+[Authentication](/api/authentication).
+
+## 2. Connect a channel
+
+Pick one of these.
+
+**WhatsApp.** You need your own WhatsApp Business Account on Meta. Connect it in the
+console under **Integrations**, or with your API key:
+
+```bash
+curl -X POST "$KV_BASE_URL/whatsapp/connections" \
+  -H "Authorization: Bearer $KV_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "waba_id": "<your WABA id>",
     "phone_number_id": "<your phone number id>",
-    "access_token": "<your access token>"
+    "access_token": "<Meta access token>"
   }'
 ```
 
-Full details, including how to receive delivery receipts back, are in
-[Connecting WhatsApp](/api/channels/whatsapp).
+A `201` returns the connection. Details are in [WhatsApp](/api/channels/whatsapp).
+
+**Email.** In the console, open **Email domains**, add your domain, publish the DNS
+record it shows, and wait for it to verify. Mail goes out from `no-reply@<your domain>`.
+Details are in [Email](/api/channels/email).
 
 ## 3. Send a message
 
 ```bash
-curl -X POST https://api.keenvector.in/v1/messages \
-  -H "Authorization: Bearer kv_live_..." \
+curl -X POST "$KV_BASE_URL/v1/messages" \
+  -H "Authorization: Bearer $KV_API_KEY" \
   -H "Content-Type: application/json" \
-  -H "Idempotency-Key: order-4471-confirmation" \
+  -H "Idempotency-Key: order-4471-shipped" \
   -d '{
     "channel": "whatsapp",
     "to": "919876543210",
@@ -55,23 +64,57 @@ curl -X POST https://api.keenvector.in/v1/messages \
   }'
 ```
 
+For email, set `"channel": "email"`, use an email address in `to`, and add a `subject`
+(it is required for email):
+
+```json
+{ "channel": "email", "to": "asha@example.com", "subject": "Order #4471 shipped", "body": "Hi Asha, ..." }
+```
+
+The response is `202 Accepted` with the stored message:
+
 ```json
 {
-  "ID": "e6b4ce10-...",
-  "Status": "SENT",
-  "ProviderMessageID": "wamid.HBgMOTE...",
-  "CreatedAt": "2026-09-06T09:42:07Z"
+  "ID": "01928f3a-7c2e-7b4a-9d61-3f0a8c2e5b17",
+  "TenantID": "…",
+  "IdempotencyKey": "order-4471-shipped",
+  "Channel": "whatsapp",
+  "To": "919876543210",
+  "Subject": "",
+  "Body": "Hi! Your order #4471 has shipped.",
+  "Status": "QUEUED",
+  "ProviderMessageID": "",
+  "Error": "",
+  "CreatedAt": "2026-09-30T09:42:07.123456Z"
 }
 ```
 
-`Status` is `SENT` or `FAILED` — a successful HTTP response means we accepted and
-forwarded the request, not that WhatsApp delivered it. See
-[Sending messages](/api/messages) for the full field reference and
-[Webhooks](/api/webhooks) for how to know when it's actually delivered/read.
+`202` means the message is queued. It has not been sent yet. Keep the `ID`.
 
-::: tip First message to a new customer?
-Free-form text only works if the customer has messaged you in the last 24 hours (WhatsApp's
-own rule, not ours). For a cold first contact — an order confirmation, an OTP — you send an
-**approved message template** instead. See
-[Connecting WhatsApp § Templates](/api/channels/whatsapp#templates).
+::: warning WhatsApp free-form text needs an open 24-hour window
+WhatsApp only delivers free-form text to someone who has messaged your number in the last
+24 hours. This is Meta's rule. Outside that window Meta can accept the send, so the
+message can still show `SENT`, but Meta does not deliver it. You cannot send templates
+through the API yet. To reach someone for the first time, use a campaign or workflow
+in the console.
 :::
+
+## 4. Check the status
+
+There are no status webhooks yet ([Events](/api/events)), so you poll. `GET /v1/messages`
+returns your newest messages first:
+
+```bash
+curl "$KV_BASE_URL/v1/messages?limit=20" -H "Authorization: Bearer $KV_API_KEY"
+```
+
+Find your `ID` in the list and read `Status`:
+
+| `Status` | Meaning |
+|---|---|
+| `QUEUED` | Accepted and waiting for the channel worker. |
+| `SENT` | The provider (Meta or the receiving mail server) accepted it. This does not confirm delivery. |
+| `FAILED` | It was not sent. `Error` says why, for example no WhatsApp connection, no verified email domain, or the provider refused it. |
+
+Next: [Messages](/api/messages) for the full reference, and [Idempotency](/api/idempotency)
+before you add retries.

@@ -1,72 +1,45 @@
-# API reference
+# Endpoint summary
 
-This is a quick lookup table. For request/response schemas, live examples in cURL /
-JavaScript / TypeScript / Go / Python, and "Try it" against a base URL you configure, use
-the **[interactive reference](/reference.html)** — generated from the same
-[`openapi.yaml`](/openapi.yaml) that backs this page, so the two can't drift apart.
+Every endpoint that exists today, grouped by who calls it. Full request and response shapes
+are in the [interactive reference](/reference.html) ([raw OpenAPI](/openapi.yaml)).
 
-Only `POST`/`GET /v1/messages` requires `Authorization: Bearer kv_live_...` today. Every
-other endpoint below is **Preview**: it authenticates with a development-only
-`X-Tenant-ID` header instead, since the platform's real auth middleware isn't wired in for
-these services yet. See [Authentication](/api/authentication). Base URL is a
-placeholder — see [note on the overview page](/api/#base-url).
+## Message API — your server, with an API key
 
-## Messages
+`Authorization: Bearer kv_live_…` on every call ([Authentication](/api/authentication)).
+Base URL: see [Environments](/api/environments).
 
-| Method | Path | Description |
+| Method | Path | What it does |
 |---|---|---|
-| `POST` | `/v1/messages` | Send a message. See [Sending messages](/api/messages). |
-| `GET` | `/v1/messages` | List your messages, newest first. |
+| `POST` | `/v1/messages` | Send a WhatsApp (free text) or email message → `202` + `Status: QUEUED`. Optional `Idempotency-Key` |
+| `GET` | `/v1/messages` | List your messages, newest first; `before`, `limit` (≤200) |
+| `POST` | `/whatsapp/connections` | Connect a WhatsApp Business Account → `201` |
+| `GET` | `/whatsapp/connections` | Current WhatsApp connection |
+| `DELETE` | `/whatsapp/connections` | Disconnect WhatsApp → `204` |
+| `POST` | `/instagram/connections` | Connect an Instagram professional account → `201` |
+| `GET` | `/instagram/connections` | Current Instagram connection |
+| `DELETE` | `/instagram/connections` | Disconnect Instagram → `204` |
+| `GET` | `/healthz` | Liveness |
 
-## WhatsApp
+## Website public API — browsers, no key
 
-| Method | Path | Description |
+Keyed by your published site's slug. Served by a different host from the Message API
+([Website chat & forms](/api/channels/website)).
+
+| Method | Path | What it does |
 |---|---|---|
-| `POST` | `/whatsapp/connections` | Connect your WABA credentials |
-| `GET` | `/whatsapp/connections` | View your current connection |
-| `DELETE` | `/whatsapp/connections` | Disconnect |
-| `POST` | `/whatsapp/messages/template` | Send a pre-approved template message |
+| `GET` | `/public/sites/{slug}` | Published site config |
+| `POST` | `/public/sites/{slug}/leads` | Contact form → `202`; starts Form Submitted workflows |
+| `POST` | `/public/sites/{slug}/chat` | Website chat message (20/min per IP) |
+| `GET` | `/public/sites/{slug}/chat/{session}` | Poll a chat session for replies (240/min per IP) |
 
-See [Connecting WhatsApp](/api/channels/whatsapp) for request/response detail.
+## Not in the API (console only today)
 
-| `GET` | `/whatsapp/templates` | List templates and their Meta approval status |
-| `POST` | `/whatsapp/templates` | Submit a new template for Meta's approval |
+Workflows, campaigns and templates, email domains, contacts, the webhook registration that
+wires your Meta app to KeenVector ([Receiving provider webhooks](/api/receiving-webhooks)),
+and API key management. Outbound event webhooks to your server aren't available yet
+([Events](/api/events)).
 
-## Campaigns
+## Errors
 
-Bulk-send an approved template to many recipients at once.
-
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/campaigns` | Create a campaign |
-| `GET` | `/campaigns` | List campaigns |
-| `GET` | `/campaigns/{id}` | Get one campaign |
-| `GET` | `/campaigns/{id}/targets` | Per-recipient status |
-| `POST` | `/campaigns/{id}/trigger` | Send to every recipient |
-
-## Webhooks
-
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/webhooks/tenants/{id}/webhook-config/{provider}` | Register your app secret, get back a callback URL + verify token |
-| `GET` | `/webhooks/tenants/{id}/webhook-config/{provider}` | View your current webhook config |
-| `DELETE` | `/webhooks/tenants/{id}/webhook-config/{provider}` | Disconnect a webhook |
-| `GET` | `/webhooks/tenants/{id}/webhook-config/{provider}/recent` | Last 20 verified events received |
-
-`{provider}` is `whatsapp`, `instagram`, or `slack`. See
-[Webhooks](/api/webhooks) for detail.
-
-KeenVector delivering events *to* your endpoint (outbound, the reverse direction) is
-configured in the console under **Developer → Webhooks**, not via an HTTP endpoint — see
-[Webhooks § Receiving KeenVector events](/api/webhooks#receiving-keenvector-events).
-
-## Error format
-
-Every error response:
-
-```json
-{ "error_code": "invalid_api_key", "message": "the api key is invalid or revoked" }
-```
-
-The HTTP status carries the category — `401` auth, `400` bad request, `502` upstream
-provider error. See each endpoint's page for its specific `error_code` values.
+JSON errors look like `{"error_code": "...", "message": "..."}`; a few are still plain text.
+See [Errors](/api/errors).
