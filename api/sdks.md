@@ -134,8 +134,8 @@ await sendMessage({ channel: 'whatsapp', to: '919876543210', body: 'Your order #
 
 ## Check delivery status
 
-No service sends message status events to your webhook endpoint yet
-([Events](/api/events)), so poll:
+Subscribe to `message.sent` and `message.failed` on your webhook endpoint
+([Events](/api/events)) to be told, or poll:
 
 ```bash
 curl "$KV_BASE_URL/v1/messages?limit=20" -H "Authorization: Bearer $KV_API_KEY"

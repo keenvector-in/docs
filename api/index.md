@@ -33,17 +33,15 @@ your backend ──POST /v1/messages──▶ message-api ──queue──▶ c
 
 ```text
 provider (Meta, mail) ──▶ KeenVector      "receiving webhooks": live, you configure it once
-KeenVector ──▶ your server               "events": endpoint, signing, test and log live; no platform events yet
+KeenVector ──▶ your server               "events": message events, signed, retried, logged
 ```
 
 - **Provider to KeenVector.** Meta and other providers call KeenVector with inbound
   messages and delivery updates. You set this up once per connection. See
   [Receiving provider webhooks](/api/receiving-webhooks).
 - **KeenVector to your server.** You can register an endpoint in the console, get a
-  signing secret, send a signed test event and read the delivery log. But nothing on the
-  platform emits events yet: the only delivery your endpoint receives today is the
-  console's `webhook.test`. Keep polling `GET /v1/messages` for status. See
-  [Events](/api/events).
+  signing secret and receive signed `message.received`, `message.sent`, `message.failed`
+  and `message.delivered` events. See [Events](/api/events).
 
 ## What's available
 
@@ -58,7 +56,8 @@ KeenVector ──▶ your server               "events": endpoint, signing, test
 | Send WhatsApp templates through the API | Not available. Templates can be sent from campaigns and workflows in the console. |
 | Self-serve API keys (create, list and revoke in the console) | Live. Business admins create and revoke; any team member can see the list. See [Authentication](/api/authentication). |
 | Outbound webhooks: register an endpoint, signing secret, test event, delivery log | Live. See [Events](/api/events). |
-| Outbound events for messages, campaigns and workflows (`message.*`, `campaign.completed`, `workflow.completed`) | Not produced yet. You can subscribe to them, but no service sends them. |
+| Message events (`message.received`, `message.sent`, `message.failed`, `message.delivered`) | Live. See [Events](/api/events). |
+| `campaign.completed`, `workflow.completed` | Not produced yet. You can subscribe to them, but no service sends them. |
 | Rate limits (`429`) | Not enforced yet. See [Rate limits](/api/rate-limits). |
 | Test or sandbox keys | Not available. See [Environments](/api/environments). |
 

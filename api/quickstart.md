@@ -110,8 +110,8 @@ in the console.
 
 ## 4. Check the status
 
-No service sends message status events to your webhook endpoint yet
-([Events](/api/events)), so you poll. `GET /v1/messages`
+Either subscribe to `message.sent` / `message.failed` on your webhook endpoint
+([Events](/api/events)), or poll. `GET /v1/messages`
 returns your newest messages first:
 
 ```bash

@@ -4,6 +4,8 @@ Dates are when each change landed in this documentation, not the backend commit 
 
 ## 2026-10-01
 
+- **Events:** `message.received`, `message.sent`, `message.failed` and `message.delivered` are delivered to your endpoint, in the `{type, tenant_id, occurred_at, data}` envelope.
+- **Events:** endpoint URLs must be public — localhost and private addresses are refused.
 - **API keys are self-serve.** Business admins create, name and revoke keys on the console's
   **API keys** page (`/developer`); any team member can see the list. Keys show a
   `kv_live_xxxx` display prefix. Rotation no longer needs KeenVector. See

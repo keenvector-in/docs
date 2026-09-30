@@ -4,15 +4,10 @@ Outbound webhooks are KeenVector POSTing signed events to an endpoint on **your*
 For the other direction (Meta calling KeenVector), see
 [Receiving provider webhooks](/api/receiving-webhooks).
 
-::: warning No platform events are sent yet
-You can register an endpoint, choose events, get a signing secret, send a test event and
-read the delivery log today. But **no KeenVector service emits events yet**. The only
-delivery your endpoint receives is the console's `webhook.test`. The event names below can
-be selected, but nothing sends them, and their payloads are not defined yet.
-See [What is sent today](#what-is-sent-today).
-
-To react to incoming messages today, use a [workflow](/api/workflows). For message status,
-poll `GET /v1/messages`.
+::: info What's sent
+Four message events are live: `message.received`, `message.sent`, `message.failed` and
+`message.delivered` — see [What is sent today](#what-is-sent-today). `campaign.completed`
+and `workflow.completed` can be selected but nothing sends them yet.
 :::
 
 Everything on this page happens on the console's **Webhooks** page at `/developer/webhooks`
@@ -27,8 +22,10 @@ secret.
 3. Choose events (next section).
 4. Click **Save endpoint** (or **Save changes** when you edit it later).
 
-Each tenant has one endpoint. The URL must be absolute and use `https://`. Plain `http://`
-is refused, except on a local development stack.
+Each tenant has one endpoint. The URL must be absolute, use `https://`, and point at a
+public address: `localhost`, private and link-local IPs are refused when you save, and
+KeenVector also refuses to connect if your hostname resolves to one. Plain `http://` and
+private addresses are allowed only on a local development stack.
 
 To stop all deliveries, click **Delete endpoint** and confirm. Deliveries still waiting
 to be retried are cancelled (marked failed with `endpoint deleted`), and the signing secret
@@ -183,10 +180,26 @@ you have processed and skip repeats. Each test send has its own id.
 
 ## What is sent today
 
-Only `webhook.test`, from **Send test**. No KeenVector service sends message, campaign or
-workflow events to this pipeline yet. When one does, this page will document its payload
-and the [changelog](/api/changelog) will say so. Until then:
+Every event uses the same envelope as `webhook.test`:
 
-- For message status, poll [`GET /v1/messages`](/api/messages).
-- To act on inbound messages, website leads or new contacts, build a
-  [workflow](/api/workflows).
+```json
+{
+  "type": "message.received",
+  "tenant_id": "4d516433-7303-43ef-b3bc-d2b26f69c13a",
+  "occurred_at": "2026-10-01T09:42:07Z",
+  "data": { "channel": "whatsapp", "from": "919812345678", "body": "Hi, what are your prices?" }
+}
+```
+
+| Event | Sent when | `data` |
+|---|---|---|
+| `message.received` | A customer messages you on WhatsApp, Instagram or your website chat | `channel`, `from`, `body` |
+| `message.sent` | A channel accepted a message you sent (API, workflow or campaign) | `message_id`, `status: "sent"`, `provider_message_id` |
+| `message.failed` | A send was refused, or an email hard-bounced or drew a complaint | a send: `message_id`, `status: "failed"`, `error` · an email: `channel`, `recipient`, `kind` (`bounce` or `complaint`), `detail` |
+| `message.delivered` | The provider confirmed delivery (email today) | `channel`, `recipient`, `message_id` (the provider's id), `kind: "delivered"` |
+| `campaign.completed`, `workflow.completed` | Not sent yet | — |
+
+A soft email bounce sends nothing; the provider is still retrying it. WhatsApp's own
+delivered and read receipts don't produce `message.delivered` yet.
+
+Only events you subscribed to are sent, and nothing is queued while you have no endpoint.
