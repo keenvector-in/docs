@@ -69,16 +69,14 @@ CI (`.github/workflows/ci.yml`) runs `docs:validate` then `docs:build` on every 
 
 ## Deploying `docs.keenvector.in`
 
-**Recommended: Cloudflare Pages**, connected directly to this repo (no GitHub Actions
-needed for deploy — Cloudflare builds on push):
-
-1. Cloudflare dashboard → Pages → Create a project → connect this repo.
-2. Build command: `npm run docs:build`. Output directory: `.vitepress/dist`.
-3. Custom domain: add `docs.keenvector.in`, point its DNS (CNAME) at the Pages project.
+**Vercel**, connected to this repo; it builds and deploys on every push to `master`.
+Build settings live in `vercel.json` (`npm run docs:build`, output `.vitepress/dist`), so the
+dashboard import needs no overrides. `docs.keenvector.in` already resolves to Vercel; add it under
+the project's Settings → Domains.
 
 **Alternative: GitHub Pages** — `.github/workflows/deploy-gh-pages.yml` is included but
-disabled (`workflow_dispatch` only) to avoid double-deploying if you go with Cloudflare.
-To use it instead: uncomment the `push: branches: [main]` trigger, enable Pages in repo
+disabled (`workflow_dispatch` only) to avoid double-deploying with Vercel.
+To use it instead: uncomment the `push: branches: [master]` trigger, enable Pages in repo
 settings with source "GitHub Actions", and set the custom domain there.
 
 Either way, this repo deploys independently of `core-engine` — no backend build or runtime
