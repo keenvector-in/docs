@@ -6,24 +6,18 @@ KeenVector sends and receives through it. Nothing goes out under KeenVector's na
 
 ## What works today
 
-| Channel | Connect | Receive inbound | Send with `POST /v1/messages` | Send from workflows | Status |
-|---|---|---|---|---|---|
-| [WhatsApp](/api/channels/whatsapp) | Console or API | Yes, through a provider webhook you register | Yes, `channel: "whatsapp"`, free text | **Reply**, **Send WhatsApp** | Available |
-| [Instagram](/api/channels/instagram) | Console (Instagram login) or API | Yes (DMs), through a provider webhook you register | No | **Reply** | Available |
-| [Email](/api/channels/email) | Console (verify a sending domain) | No | Yes, `channel: "email"` with `subject` | No | Available (send only) |
-| [Website chat & forms](/api/channels/website) | Console (publish your site, paste the widget) | Yes, chat messages and form submissions | No | **Reply** (chat only) | Available |
-| [SMS](/api/channels/sms) | None | No | No | No | Not available yet |
-| [Slack](/api/channels/slack) | None | No | No | No | Not available yet |
+| Channel | Connect | Receive inbound | Send with `POST /v1/messages` | Status |
+|---|---|---|---|---|
+| [WhatsApp](/api/channels/whatsapp) | Console or API | Yes, through a provider webhook you register | Yes, `channel: "whatsapp"`, free text and templates | Available |
+| [Instagram](/api/channels/instagram) | Console (Instagram login) or API | Yes (DMs), through a provider webhook you register | No | Available |
+| [Email](/api/channels/email) | Console (verify a sending domain) | No | Yes, `channel: "email"` with `subject` | Available (send only) |
+| [Website chat & forms](/api/channels/website) | Console (publish your site, paste the widget) | Yes, chat messages and form submissions | No | Available |
+| [SMS](/api/channels/sms) | None | No | No | Not available yet |
+| [Slack](/api/channels/slack) | None | No | No | Not available yet |
 
 Some notes on the table:
 
-- **Receive inbound** means that customer messages reach KeenVector and can start
-  [workflows](/api/workflows) through the **Incoming Message** trigger. Website chat also
-  starts **Chatbot Message** and website forms start **Form Submitted**.
-- **Reply** answers on the channel the triggering message came in on. **Send WhatsApp**
-  sends to any number. The builder also shows **Send Email**, **Send Instagram**,
-  **Send SMS** and **Send Slack**, but they can't run yet: a workflow that contains one
-  stays a draft and can't be published.
+- **Receive inbound** means that customer messages reach KeenVector and show up in your inbox.
 - `POST /v1/messages` accepts only `whatsapp` and `email`. Any other `channel` returns
   `400 invalid_request` with the list of supported channels. See [Messages](/api/messages).
 

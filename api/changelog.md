@@ -23,7 +23,7 @@ Dates are when each change landed in this documentation, not the backend commit 
   (`/developer/webhooks`) you set your HTTPS endpoint and event filter, get and rotate a
   `whsec_` signing secret, send a signed `webhook.test`, and read the delivery log.
   Deliveries now carry `X-KeenVector-Delivery` for dedupe. No platform events
-  (`message.*`, `campaign.completed`, `workflow.completed`) are sent yet. See
+  (`message.*`, `campaign.completed`) are sent yet. See
   [Events](/api/events).
 - New console page **SDK & code samples** (`/developer/sdk`). See [Code samples](/api/sdks).
 
@@ -31,9 +31,8 @@ Dates are when each change landed in this documentation, not the backend commit 
 
 - **Docs:** the API reference now lists only endpoints that exist. Removed `/whatsapp/messages`, `/whatsapp/templates`, `/campaigns/*`, `/keys`, `/verify` and the `X-Tenant-ID` scheme — none were callable with an API key. Added `/instagram/connections` and the website public API (leads, chat).
 - **Docs:** `POST /v1/messages` returns `202` with `Status: QUEUED` (not `201`); `channel` accepts `whatsapp` and `email`; the idempotency window is 2 hours (not 24).
-- **Workflows:** Chatbot Message, Form Submitted and Contact Created triggers are live.
 - New guide: [Connect WhatsApp & Instagram: two ways](/api/connectors/meta) — sign up through KeenVector (Tech Provider, not available yet) or bring your own Meta app.
-- New guides: Environments, Idempotency, Pagination, Versioning, Connectors, Website chat & forms, Receiving provider webhooks, Workflows and Recipes.
+- New guides: Environments, Idempotency, Pagination, Versioning, Connectors, Website chat & forms, Receiving provider webhooks.
 
 
 ## 2026-09-06

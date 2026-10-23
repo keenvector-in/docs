@@ -57,7 +57,7 @@ token you give it.
    [WhatsApp → What you need from Meta](/api/channels/whatsapp#what-you-need-from-meta).
 3. **Connect the account** — in the console (**Integrations → WhatsApp**) or with
    `POST /whatsapp/connections` ([WhatsApp → Connect](/api/channels/whatsapp#connect)).
-4. **Wire your app's webhook to KeenVector** so incoming messages reach your workflows:
+4. **Wire your app's webhook to KeenVector** so incoming messages reach KeenVector:
    register your app secret, then paste the callback URL and verify token into your app's
    **WhatsApp → Configuration → Webhook** and subscribe to `messages`
    ([Receiving provider webhooks](/api/receiving-webhooks)).
@@ -71,6 +71,6 @@ For Instagram with your own app, connect with `POST /instagram/connections` and 
 ## Switching later
 
 Moving from your own app to signing up through KeenVector (once it's available) means
-disconnecting in KeenVector and signing up again with the same number. Your contacts,
-workflows and message history stay in KeenVector. Moving a number between WhatsApp Business
+disconnecting in KeenVector and signing up again with the same number. Your contacts
+and message history stay in KeenVector. Moving a number between WhatsApp Business
 Accounts is a Meta process — talk to your KeenVector contact before you start.

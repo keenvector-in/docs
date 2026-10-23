@@ -58,16 +58,6 @@ export default defineConfig({
         ],
       },
       {
-        text: 'Automations',
-        items: [
-          { text: 'Workflows', link: '/api/workflows' },
-          { text: 'Recipes', link: '/api/recipes/' },
-          { text: 'Forward WhatsApp to your team', link: '/api/recipes/forward-whatsapp-to-your-team' },
-          { text: 'Thank website leads', link: '/api/recipes/thank-website-leads' },
-          { text: 'Welcome new contacts', link: '/api/recipes/welcome-new-contacts' },
-        ],
-      },
-      {
         text: 'Reference',
         items: [
           { text: 'API reference (interactive)', link: '/reference.html', target: '_self' },

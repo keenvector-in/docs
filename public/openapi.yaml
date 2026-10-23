@@ -12,7 +12,7 @@ info:
     - **Website public API** (`tenant-site`) — anonymous, keyed by your site's slug: what the
       chat widget and your site's contact form call from the browser.
 
-    Everything you do in the KeenVector console (workflows, campaigns, email domains, webhook
+    Everything you do in the KeenVector console (campaigns, email domains, webhook
     registration, API keys, your outbound webhook endpoint) uses the console's own session and
     is not part of this API — see [Overview](/api/).
 
@@ -265,8 +265,7 @@ paths:
       tags: [Website (public)]
       summary: Submit the contact form
       description: |
-        Stores the lead, files it under the matching contact and starts your **Form Submitted**
-        workflows. Give at least a phone or an email. `website` is a honeypot: leave it empty
+        Stores the lead and files it under the matching contact. Give at least a phone or an email. `website` is a honeypot: leave it empty
         (a filled one is accepted and silently dropped).
       security: []
       parameters: [{ $ref: '#/components/parameters/Slug' }]
@@ -302,9 +301,7 @@ paths:
       description: |
         One visitor message. Pass the same `session_id` for a conversation and, from the second
         message on, the `session_token` you got back in the `X-Chat-Token` header. Rate limited
-        to 20 requests per minute per IP. When your workflows handle the web channel the reply
-        arrives asynchronously (`queued: true`) — poll the session; otherwise the AI assistant
-        answers inline.
+        to 20 requests per minute per IP. The AI assistant answers inline.
       security: []
       parameters:
         - $ref: '#/components/parameters/Slug'
@@ -333,49 +330,8 @@ paths:
                   reply: { type: string }
                   handoff: { type: boolean }
                   session_token: { type: string }
-        '202':
-          description: Queued for your workflows — poll for the reply.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  queued: { type: boolean }
-                  session_token: { type: string }
         '404': { description: "Site not found, or chat is disabled for it (`chat_disabled`)." }
         '429': { description: Too many requests from this IP. }
-
-  /public/sites/{slug}/chat/{session}:
-    servers:
-      - url: https://sites.keenvector.in
-        description: Placeholder host of the website public API (tenant-site); locally http://localhost:8083.
-    get:
-      operationId: pollChat
-      tags: [Website (public)]
-      summary: Poll a chat session for replies
-      description: Bot replies after `after` (a message id). Rate limited to 240 requests per minute per IP.
-      security: []
-      parameters:
-        - $ref: '#/components/parameters/Slug'
-        - { name: session, in: path, required: true, schema: { type: string } }
-        - { name: after, in: query, schema: { type: string, format: uuid } }
-        - { name: X-Chat-Token, in: header, required: true, schema: { type: string } }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  messages:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id: { type: string, format: uuid }
-                        text: { type: string }
-                        at: { type: string, format: date-time }
 
   /healthz:
     get:

@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: KeenVector Docs
-  text: Messaging, connectors and automations for your business
-  tagline: Connect your own WhatsApp, Instagram, email and website chat. Send from your server, automate replies in workflows.
+  text: Messaging and connectors for your business
+  tagline: Connect your own WhatsApp, Instagram, email and website chat. Send from your server.
   actions:
     - theme: brand
       text: Quickstart
@@ -24,9 +24,6 @@ features:
     details: WhatsApp Business, Instagram, a verified email domain and your website chat — from the console or the API.
     link: /api/connectors/
   - title: Receive provider webhooks
-    details: Wire your Meta app to KeenVector once; inbound messages start your workflows.
+    details: Wire your Meta app to KeenVector once; inbound messages reach KeenVector.
     link: /api/receiving-webhooks
-  - title: Automate with workflows
-    details: Triggers for messages, website chat, forms and new contacts; reply, forward, branch, ask AI.
-    link: /api/workflows
 ---

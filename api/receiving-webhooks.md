@@ -5,8 +5,7 @@ On KeenVector that webhook is **your own Meta app** calling a callback URL that 
 your tenant. You give KeenVector your app's secret, KeenVector gives you the callback URL
 and a verify token, and you paste those into Meta.
 
-Once it works, incoming messages start your [workflows](/api/workflows) and show up in
-the recent-events log below.
+Once it works, incoming messages show up in the recent-events log below.
 
 ::: info Only for your own Meta app
 This page is for businesses that [bring their own Meta app](/api/connectors/meta#_2-bring-your-own-meta-app).
@@ -20,11 +19,10 @@ becomes available, KeenVector's app receives the webhooks and there is nothing t
 |---|---|---|
 | `whatsapp` | Inbound messages, delivery receipts (`sent`, `delivered`, `read`, `failed`), template approval decisions | Meta GET handshake + `X-Hub-Signature-256` |
 | `instagram` | Inbound Instagram DMs | Same Meta handshake and signature as WhatsApp. The registry also returns the `redirect_uri` for Instagram Business Login, see [Instagram](/api/channels/instagram). |
-| `slack` | Slack Events API callbacks | Slack's `url_verification` handshake and timestamped signature. Events are recorded but don't start workflows yet: Slack events carry no sender KeenVector can reply to. |
+| `slack` | Slack Events API callbacks | Slack's `url_verification` handshake and timestamped signature. Events are recorded but not acted on yet. |
 | `ses` | Amazon SES bounce, complaint and delivery notifications over SNS | Platform-side for the email channel, not something you set up with an app secret. See [Email](/api/channels/email). |
 
-Only inbound **messages** from WhatsApp and Instagram reach workflows. Delivery receipts
-and template decisions are recorded (you can see them in [recent events](#check-that-events-arrive))
+Delivery receipts and template decisions are recorded (you can see them in [recent events](#check-that-events-arrive))
 but nothing else consumes them yet.
 
 ## Before you start
@@ -154,7 +152,7 @@ curl -X DELETE "$WEBHOOK_HOST/tenants/<tenant-id>/webhook-config/whatsapp" \
 | `POST` that couldn't be handed on internally | `503`, so Meta retries it |
 
 Meta retries a callback that doesn't get a `200`. KeenVector drops duplicates of events it
-already accepted, so a retry never starts a workflow twice for the same message.
+already accepted, so a retry never records the same message twice.
 
 ## Local development with ngrok
 
@@ -176,4 +174,3 @@ again. A reserved ngrok domain avoids this. For Instagram Business Login the sta
 | **Verify and save** fails | Token mismatch (you re-registered and pasted an old token), or Meta can't reach the URL (wrong host, stale ngrok host, tenant not registered → `404`) | `GET` the config for the current token; check the full callback URL opens from outside your network |
 | Meta's delivery log shows `403` | The app secret registered in KeenVector isn't this app's secret (wrong app, or the secret was reset in Meta) | `POST` the current app secret again, then paste the new verify token into Meta |
 | Nothing in `/recent` | App unpublished (real events held back), `messages` field not subscribed, or the callback still points at an old ngrok host | Send Meta's dashboard test first; subscribe the field; re-save the callback URL |
-| Events in `/recent`, but no workflow ran | No published workflow matches the channel | See [Workflows](/api/workflows) |

@@ -1,7 +1,6 @@
 # Instagram
 
-Connect your Instagram professional account to receive direct messages and answer them
-from workflows.
+Connect your Instagram professional account to receive direct messages.
 
 ::: tip Two ways to set up Meta
 **Sign up through KeenVector** (one link, KeenVector is the Meta Tech Provider — not available
@@ -92,8 +91,7 @@ same Meta signature and verify-token handshake as WhatsApp. See
 [Receiving provider webhooks](/api/receiving-webhooks). KeenVector ignores echoes of your
 own outbound messages.
 
-Each inbound text DM starts your published workflows that use the **Incoming Message**
-trigger for Instagram. The sender is identified by their Instagram-scoped ID (IGSID) and
+Each inbound text DM reaches KeenVector. The sender is identified by their Instagram-scoped ID (IGSID) and
 filed as a contact.
 
 ## Send
@@ -102,12 +100,6 @@ filed as a contact.
 `/v1/messages` doesn't accept `"channel": "instagram"`. It returns
 `400 invalid_request` ("unsupported channel").
 :::
-
-Instagram messages go out only from [workflows](/api/workflows):
-
-- **Reply** answers a DM on Instagram, to the person who sent it.
-- **Send Instagram** appears in the builder but can't run yet. A workflow that contains it
-  can't be published.
 
 Instagram lets a business message someone only after that person messages first, and only
 within 24 hours of their last message. A reply outside that window fails.

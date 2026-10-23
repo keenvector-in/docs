@@ -7,7 +7,7 @@ For the other direction (Meta calling KeenVector), see
 ::: info What's sent
 Four message events are live: `message.received`, `message.sent`, `message.failed` and
 `message.delivered` — see [What is sent today](#what-is-sent-today). `campaign.completed`
-and `workflow.completed` can be selected but nothing sends them yet.
+can be selected but nothing sends it yet.
 :::
 
 Everything on this page happens on the console's **Webhooks** page at `/developer/webhooks`
@@ -43,7 +43,6 @@ Check some to receive only those.
 | `message.failed` | No |
 | `message.received` | No |
 | `campaign.completed` | No |
-| `workflow.completed` | No |
 
 Any other name is rejected when you save. `webhook.test` is not in the filter: a test is
 always sent, whatever you have checked.
@@ -194,10 +193,10 @@ Every event uses the same envelope as `webhook.test`:
 | Event | Sent when | `data` |
 |---|---|---|
 | `message.received` | A customer messages you on WhatsApp, Instagram or your website chat | `channel`, `from`, `body` |
-| `message.sent` | A channel accepted a message you sent (API, workflow or campaign) | `message_id`, `status: "sent"`, `provider_message_id` |
+| `message.sent` | A channel accepted a message you sent (API or campaign) | `message_id`, `status: "sent"`, `provider_message_id` |
 | `message.failed` | A send was refused, or an email hard-bounced or drew a complaint | a send: `message_id`, `status: "failed"`, `error` · an email: `channel`, `recipient`, `kind` (`bounce` or `complaint`), `detail` |
 | `message.delivered` | The provider confirmed delivery (email today) | `channel`, `recipient`, `message_id` (the provider's id), `kind: "delivered"` |
-| `campaign.completed`, `workflow.completed` | Not sent yet | — |
+| `campaign.completed` | Not sent yet | — |
 
 A soft email bounce sends nothing; the provider is still retrying it. WhatsApp's own
 delivered and read receipts don't produce `message.delivered` yet.
