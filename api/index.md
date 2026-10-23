@@ -18,6 +18,18 @@ New here? Start with the [Quickstart](/api/quickstart).
 | **Message** | One outbound send. It is accepted as `QUEUED` and then moves to `SENT` or `FAILED`. See [Messages](/api/messages). |
 | **Contact** | A person your business talks to. Contacts are managed in the console. There is no public contacts API yet. |
 | **Webhooks** | These go in two directions. See below. |
+<!-- hidden until the business is registered (original table):
+| Concept | What it is |
+|---|---|
+| **Tenant** | Your business's workspace on KeenVector. Every message, contact, connection and key belongs to exactly one tenant. |
+| **API key** | A `kv_live_...` secret that identifies your tenant on every request. See [Authentication](/api/authentication). |
+| **Channel** | A way to reach a customer: `whatsapp` and `email` can be sent through the API today. See [Connectors](/api/connectors/). |
+| **Connection** | Your own provider account linked to your tenant: a WhatsApp Business Account, or a verified email sending domain. Without one, sends on that channel fail. |
+| **Message** | One outbound send. It is accepted as `QUEUED` and then moves to `SENT` or `FAILED`. See [Messages](/api/messages). |
+| **Contact** | A person your business talks to. Contacts are managed in the console. There is no public contacts API yet. |
+| **Workflow** | An automation built in the console, for example "when a website lead arrives, send a WhatsApp". See [Workflows](/api/workflows). |
+| **Webhooks** | These go in two directions. See below. |
+-->
 
 ### How a send flows
 
@@ -59,6 +71,23 @@ KeenVector ──▶ your server               "events": message events, signed,
 | `campaign.completed` | Not produced yet. You can subscribe to them, but no service sends them. |
 | Rate limits (`429`) | Not enforced yet. See [Rate limits](/api/rate-limits). |
 | Test or sandbox keys | Not available. See [Environments](/api/environments). |
+<!-- hidden until the business is registered (original table):
+| Capability | Status |
+|---|---|
+| Send WhatsApp free-form text (`POST /v1/messages`, `channel: "whatsapp"`) | Live |
+| Send email (`POST /v1/messages`, `channel: "email"`) | Live. Needs a verified sending domain. |
+| List messages and their status (`GET /v1/messages`) | Live |
+| Idempotent retries (`Idempotency-Key` header) | Live |
+| Connect WhatsApp or Instagram with an API key (`/whatsapp/connections`, `/instagram/connections`) | Live |
+| Send on Instagram or website chat through the API | Not available |
+| Send WhatsApp templates through the API (`template` on `POST /v1/messages`) | Live. Body, header and button params. See [WhatsApp](/api/channels/whatsapp#with-the-api-templates). |
+| Self-serve API keys (create, list and revoke in the console) | Live. Business admins create and revoke; any team member can see the list. See [Authentication](/api/authentication). |
+| Outbound webhooks: register an endpoint, signing secret, test event, delivery log | Live. See [Events](/api/events). |
+| Message events (`message.received`, `message.sent`, `message.failed`, `message.delivered`) | Live. See [Events](/api/events). |
+| `campaign.completed`, `workflow.completed` | Not produced yet. You can subscribe to them, but no service sends them. |
+| Rate limits (`429`) | Not enforced yet. See [Rate limits](/api/rate-limits). |
+| Test or sandbox keys | Not available. See [Environments](/api/environments). |
+-->
 
 ## Developer pages in the console
 
@@ -86,6 +115,10 @@ Keys and your webhook endpoint are managed in the console (tenant admin portal) 
 [Instagram](/api/channels/instagram) · [Email](/api/channels/email) ·
 [Website chat & forms](/api/channels/website)
 
+<!-- hidden until the business is registered:
+**Webhooks and automation:** [Receiving provider webhooks](/api/receiving-webhooks) ·
+[Events](/api/events) · [Workflows](/api/workflows) · [Recipes](/api/recipes/)
+-->
 **Webhooks:** [Receiving provider webhooks](/api/receiving-webhooks) ·
 [Events](/api/events)
 

@@ -30,9 +30,20 @@ Keyed by your published site's slug. Served by a different host from the Message
 | `GET` | `/public/sites/{slug}` | Published site config |
 | `POST` | `/public/sites/{slug}/leads` | Contact form → `202` |
 | `POST` | `/public/sites/{slug}/chat` | Website chat message (20/min per IP) |
+<!-- hidden until the business is registered (original table):
+| Method | Path | What it does |
+|---|---|---|
+| `GET` | `/public/sites/{slug}` | Published site config |
+| `POST` | `/public/sites/{slug}/leads` | Contact form → `202`; starts Form Submitted workflows |
+| `POST` | `/public/sites/{slug}/chat` | Website chat message (20/min per IP) |
+| `GET` | `/public/sites/{slug}/chat/{session}` | Poll a chat session for replies (240/min per IP) |
+-->
 
 ## Not in the API (console only today)
 
+<!-- hidden until the business is registered:
+Workflows, campaigns and templates,
+-->
 Campaigns and templates, email domains, contacts, the webhook registration that
 wires your Meta app to KeenVector ([Receiving provider webhooks](/api/receiving-webhooks)),
 API key management ([Authentication](/api/authentication)) and your outbound webhook

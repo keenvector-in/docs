@@ -5,7 +5,7 @@ export default defineConfig({
   description: 'Developer documentation for the KeenVector platform API',
   srcDir: '.',
   // Hidden until the business is registered: kept in the repo, left out of the build.
-  srcExclude: ['**/node_modules/**', 'api/workflows.md', 'api/recipes/**'],
+  srcExclude: ['**/node_modules/**', 'README.md', 'CLAUDE.md', 'api/workflows.md', 'api/recipes/**'],
   head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }]],
   themeConfig: {
     logo: '/brand/logo-mark.svg',
@@ -58,6 +58,17 @@ export default defineConfig({
           { text: 'Events to your server', link: '/api/events' },
         ],
       },
+      // hidden until the business is registered:
+      // {
+      //   text: 'Automations',
+      //   items: [
+      //     { text: 'Workflows', link: '/api/workflows' },
+      //     { text: 'Recipes', link: '/api/recipes/' },
+      //     { text: 'Forward WhatsApp to your team', link: '/api/recipes/forward-whatsapp-to-your-team' },
+      //     { text: 'Thank website leads', link: '/api/recipes/thank-website-leads' },
+      //     { text: 'Welcome new contacts', link: '/api/recipes/welcome-new-contacts' },
+      //   ],
+      // },
       {
         text: 'Reference',
         items: [

@@ -44,6 +44,10 @@ tags:
 security:
   - bearerAuth: []
 
+# hidden until the business is registered (original info text):
+#     Everything you do in the KeenVector console (workflows, campaigns, email domains, webhook
+#     registration, API keys, your outbound webhook endpoint) uses the console's own session and
+
 paths:
   /v1/messages:
     post:
@@ -290,6 +294,41 @@ paths:
         '400': { $ref: '#/components/responses/InvalidRequest' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+# hidden until the business is registered (original leads operation):
+#   /public/sites/{slug}/leads:
+#     servers:
+#       - url: https://sites.keenvector.in
+#         description: Placeholder host of the website public API (tenant-site); locally http://localhost:8083.
+#     post:
+#       operationId: createLead
+#       tags: [Website (public)]
+#       summary: Submit the contact form
+#       description: |
+#         Stores the lead, files it under the matching contact and starts your **Form Submitted**
+#         workflows. Give at least a phone or an email. `website` is a honeypot: leave it empty
+#         (a filled one is accepted and silently dropped).
+#       security: []
+#       parameters: [{ $ref: '#/components/parameters/Slug' }]
+#       requestBody:
+#         required: true
+#         content:
+#           application/json:
+#             schema: { $ref: '#/components/schemas/LeadRequest' }
+#       responses:
+#         '202':
+#           description: |
+#             Accepted. Usually no body. When the phone already belongs to someone who has messaged you on
+#             WhatsApp, the body asks the visitor to prove it by sending `verify_code` from `claim_address`.
+#           content:
+#             application/json:
+#               schema:
+#                 type: object
+#                 properties:
+#                   verify_code: { type: string }
+#                   claim_address: { type: string }
+#                   claim_kind: { type: string, example: whatsapp }
+#         '400': { $ref: '#/components/responses/InvalidRequest' }
+#         '404': { $ref: '#/components/responses/NotFound' }
   /public/sites/{slug}/chat:
     servers:
       - url: https://sites.keenvector.in
@@ -333,6 +372,92 @@ paths:
         '404': { description: "Site not found, or chat is disabled for it (`chat_disabled`)." }
         '429': { description: Too many requests from this IP. }
 
+# hidden until the business is registered (original chat operation and chat poll endpoint):
+#   /public/sites/{slug}/chat:
+#     servers:
+#       - url: https://sites.keenvector.in
+#         description: Placeholder host of the website public API (tenant-site); locally http://localhost:8083.
+#     post:
+#       operationId: sendChatMessage
+#       tags: [Website (public)]
+#       summary: Send a website chat message
+#       description: |
+#         One visitor message. Pass the same `session_id` for a conversation and, from the second
+#         message on, the `session_token` you got back in the `X-Chat-Token` header. Rate limited
+#         to 20 requests per minute per IP. When your workflows handle the web channel the reply
+#         arrives asynchronously (`queued: true`) — poll the session; otherwise the AI assistant
+#         answers inline.
+#       security: []
+#       parameters:
+#         - $ref: '#/components/parameters/Slug'
+#         - name: X-Chat-Token
+#           in: header
+#           required: false
+#           schema: { type: string }
+#       requestBody:
+#         required: true
+#         content:
+#           application/json:
+#             schema:
+#               type: object
+#               required: [message, session_id]
+#               properties:
+#                 message: { type: string }
+#                 session_id: { type: string }
+#       responses:
+#         '200':
+#           description: Answered inline.
+#           content:
+#             application/json:
+#               schema:
+#                 type: object
+#                 properties:
+#                   reply: { type: string }
+#                   handoff: { type: boolean }
+#                   session_token: { type: string }
+#         '202':
+#           description: Queued for your workflows — poll for the reply.
+#           content:
+#             application/json:
+#               schema:
+#                 type: object
+#                 properties:
+#                   queued: { type: boolean }
+#                   session_token: { type: string }
+#         '404': { description: "Site not found, or chat is disabled for it (`chat_disabled`)." }
+#         '429': { description: Too many requests from this IP. }
+#
+#   /public/sites/{slug}/chat/{session}:
+#     servers:
+#       - url: https://sites.keenvector.in
+#         description: Placeholder host of the website public API (tenant-site); locally http://localhost:8083.
+#     get:
+#       operationId: pollChat
+#       tags: [Website (public)]
+#       summary: Poll a chat session for replies
+#       description: Bot replies after `after` (a message id). Rate limited to 240 requests per minute per IP.
+#       security: []
+#       parameters:
+#         - $ref: '#/components/parameters/Slug'
+#         - { name: session, in: path, required: true, schema: { type: string } }
+#         - { name: after, in: query, schema: { type: string, format: uuid } }
+#         - { name: X-Chat-Token, in: header, required: true, schema: { type: string } }
+#       responses:
+#         '200':
+#           description: OK
+#           content:
+#             application/json:
+#               schema:
+#                 type: object
+#                 properties:
+#                   messages:
+#                     type: array
+#                     items:
+#                       type: object
+#                       properties:
+#                         id: { type: string, format: uuid }
+#                         text: { type: string }
+#                         at: { type: string, format: date-time }
   /healthz:
     get:
       operationId: health

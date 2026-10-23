@@ -70,7 +70,8 @@ curl -X POST "$KV_BASE_URL/v1/messages" \
   [Messages](/api/messages).
 
 ::: warning Not available yet
-- **Templates.** Email has no templates. Put the full text in `body`.
+<!-- hidden until the business is registered: - **Sending from workflows.** The **Send Email** step appears in the builder but can't run
+  yet. -->- **Templates.** Email has no templates. Put the full text in `body`.
 - **Receiving email.** There's no inbound email.
 - **Choosing the From address or name.**
 :::

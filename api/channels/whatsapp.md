@@ -96,6 +96,10 @@ To receive customer messages, register a webhook. You give KeenVector your Meta 
 Meta app under **WhatsApp → Configuration → Webhooks** and subscribe to the `messages`
 field. The steps are in [Receiving provider webhooks](/api/receiving-webhooks).
 
+<!-- hidden until the business is registered:
+Once that's done, each inbound message starts your published workflows that use the
+**Incoming Message** trigger for WhatsApp. See [Workflows](/api/workflows).
+-->
 Once that's done, inbound messages reach KeenVector and show up in your inbox.
 
 ## Send messages
@@ -176,6 +180,15 @@ webhook, but they don't change the message status in `GET /v1/messages`, and the
 forwarded to your server yet. See [Events to your server](/api/events).
 :::
 
+<!-- hidden until the business is registered:
+### From workflows
+
+- **Reply** answers a WhatsApp message on WhatsApp.
+- **Send WhatsApp** sends to any number, for example after **Form Submitted**. Its `to`
+  defaults to the sender of the triggering message.
+
+Both send free text, so the 24-hour window applies.
+-->
 ::: tip Meta's `hello_world` template
 The `hello_world` template that Meta provisions for you works only from Meta's test number.
 From your real business number it fails with error `#131058`. Create your own template.
