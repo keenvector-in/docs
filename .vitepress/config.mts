@@ -4,7 +4,8 @@ export default defineConfig({
   title: 'KeenVector Docs',
   description: 'Developer documentation for the KeenVector platform API',
   srcDir: '.',
-  srcExclude: ['**/node_modules/**'],
+  // Hidden until the business is registered: kept in the repo, left out of the build.
+  srcExclude: ['**/node_modules/**', 'api/workflows.md', 'api/recipes/**'],
   head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }]],
   themeConfig: {
     logo: '/brand/logo-mark.svg',

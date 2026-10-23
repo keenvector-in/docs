@@ -16,7 +16,7 @@ npm run docs:validate   # redocly lint public/openapi.yaml
 
 **Ground every claim in code.** Document only routes/fields/limits that exist in `core-engine` (message-api, tenant-site, webhook-ingress, workflow-engine). Anything unbuilt gets a `::: warning Not available yet` container, never a guide written as if it works. When a backend change touches a documented endpoint, update the spec and the page in the same PR, and add a line to `api/changelog.md`.
 
-**Workflows and recipes are unpublished on purpose.** Don't document workflows, recipes, triggers or sends that start on one channel and go out on another until the owner says so — even though `workflow-engine` exists.
+**Workflows and recipes are unpublished on purpose.** `api/workflows.md` and `api/recipes/` stay in the repo but are left out of the build (`srcExclude` in `.vitepress/config.mts`) and the sidebar. Don't link to them or document workflows, triggers or cross-channel sends elsewhere until the owner says so.
 
 For content shape, `sandesha_v1.0`'s `/app/developer/*` pages (`src/pages/app/DeveloperApiKeysPage.tsx`, `DeveloperWebhooksPage.tsx`, `DeveloperSdkPage.tsx`, `DeveloperConnectorsPage.tsx` — see its `src/layouts/nav.ts`) are the closest existing reference for what a tenant developer expects to find here.
 
