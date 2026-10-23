@@ -4,6 +4,8 @@ Dates are when each change landed in this documentation, not the backend commit 
 
 ## 2026-10-23
 
+- **Messages:** templates approved with named variables (`{{business_name}}`) take
+  `body_named_params`, an object of name to value, in place of `body_params`.
 - **Messages:** `POST /v1/messages` sends WhatsApp templates. Pass `template` (`name`,
   `language`, and optional `body_params`, `header` and `buttons`) instead of `body`. Covers
   authentication (OTP), utility and marketing templates. See

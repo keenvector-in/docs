@@ -159,6 +159,7 @@ curl -X POST "$KV_BASE_URL/v1/messages" \
 | `template.name` | yes | The approved template's name |
 | `template.language` | yes | The locale it was approved in, e.g. `en_US`, `hi` |
 | `template.body_params` | no | `{{1}}`, `{{2}}`… in the body, in order |
+| `template.body_named_params` | no | `{{name}}` variables, as `{"business_name": "Acme"}`. Instead of `body_params`, for a template approved with named variables |
 | `template.header` | no | `{ "type": "text", "text": "…" }` for a text header with a variable, or `{ "type": "image" \| "video" \| "document", "link": "https://…" }` for a media header. `filename` names a document |
 | `template.buttons` | no | One entry per button with a variable: `index` (position, from 0), `sub_type` (`url`, `quick_reply` or `copy_code`) and `param` |
 
