@@ -103,9 +103,8 @@ The response is `202 Accepted` with the stored message:
 ::: warning WhatsApp free-form text needs an open 24-hour window
 WhatsApp only delivers free-form text to someone who has messaged your number in the last
 24 hours. This is Meta's rule. Outside that window Meta can accept the send, so the
-message can still show `SENT`, but Meta does not deliver it. You cannot send templates
-through the API yet. To reach someone for the first time, use a campaign or workflow
-in the console.
+message can still show `SENT`, but Meta does not deliver it. To reach someone for the
+first time, send an approved template: see [WhatsApp → templates](/api/channels/whatsapp#with-the-api-templates).
 :::
 
 ## 4. Check the status

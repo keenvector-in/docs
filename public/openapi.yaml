@@ -55,9 +55,9 @@ paths:
         stored message (`Status: QUEUED`). `QUEUED` means accepted, not delivered — poll
         `GET /v1/messages` for `SENT` or `FAILED`.
 
-        - `whatsapp`: free text only; it reaches the recipient only within 24 hours of their
-          last message to you (Meta's customer-service window). Templates can't be sent through
-          this API yet.
+        - `whatsapp`: `body` (free text) reaches the recipient only within 24 hours of their
+          last message to you (Meta's customer-service window). Outside it, send `template`
+          (an approved template, with its variables) instead of `body`.
         - `email`: needs a verified sending domain (console → Email domains); `subject` is
           required. Sent from `no-reply@<your domain>`.
       parameters:
@@ -72,6 +72,26 @@ paths:
               whatsapp:
                 summary: WhatsApp free text
                 value: { channel: whatsapp, to: "919876543210", body: "Hi! Your order #4471 has shipped." }
+              whatsappOTP:
+                summary: WhatsApp authentication (OTP) template
+                value:
+                  channel: whatsapp
+                  to: "919876543210"
+                  template:
+                    name: login_otp
+                    language: en_US
+                    body_params: ["482913"]
+                    buttons: [{ index: 0, sub_type: url, param: "482913" }]
+              whatsappTemplate:
+                summary: WhatsApp template with a document header
+                value:
+                  channel: whatsapp
+                  to: "919876543210"
+                  template:
+                    name: invoice_ready
+                    language: en_US
+                    header: { type: document, link: "https://example.com/invoices/4471.pdf", filename: "Invoice-4471.pdf" }
+                    body_params: ["Asha", "#4471"]
               email:
                 summary: Email
                 value: { channel: email, to: "asha@example.com", subject: "Order #4471 shipped", body: "Your order is on its way." }
@@ -398,7 +418,8 @@ components:
   schemas:
     SendMessageRequest:
       type: object
-      required: [channel, to, body]
+      description: Send exactly one of `body` and `template`.
+      required: [channel, to]
       properties:
         channel: { type: string, enum: [whatsapp, email] }
         to:
@@ -407,13 +428,47 @@ components:
         subject:
           type: string
           description: Required for `email`; rejected for `whatsapp`.
-        body: { type: string }
+        body:
+          type: string
+          description: Free text. Required unless `template` is sent.
+        template: { $ref: '#/components/schemas/MessageTemplate' }
+
+    MessageTemplate:
+      type: object
+      description: |
+        A WhatsApp template (`whatsapp` only). Variables can't be empty or contain a newline, a tab
+        or more than four spaces in a row. Params are sent to Meta but not stored.
+      required: [name, language]
+      properties:
+        name: { type: string, description: The approved template's name. }
+        language: { type: string, description: 'The locale it was approved in, e.g. `en_US`.' }
+        body_params:
+          type: array
+          items: { type: string }
+          description: 'Fills `{{1}}`, `{{2}}`… in the body, in order.'
+        header:
+          type: object
+          required: [type]
+          properties:
+            type: { type: string, enum: [text, image, video, document] }
+            text: { type: string, description: For a `text` header. }
+            link: { type: string, format: uri, description: 'For a media header: a public `https://` URL.' }
+            filename: { type: string, description: For a `document` header only. }
+        buttons:
+          type: array
+          description: One entry per button that has a variable. An authentication template's OTP goes in a `url` button at index 0.
+          items:
+            type: object
+            required: [index, sub_type, param]
+            properties:
+              index: { type: integer, minimum: 0, maximum: 9 }
+              sub_type: { type: string, enum: [url, quick_reply, copy_code] }
+              param: { type: string, description: '`url`: the dynamic URL suffix. `quick_reply`: the payload. `copy_code`: the code, at most 15 characters.' }
 
     Message:
       type: object
       description: |
-        Field names are Go-style today and will move to snake_case before GA. Known issue: `Subject`
-        reads back empty from `GET /v1/messages` and idempotent replays (the stored value is correct).
+        Field names are Go-style today and will move to snake_case before GA.
       properties:
         ID: { type: string, format: uuid }
         TenantID: { type: string, format: uuid }
@@ -422,6 +477,7 @@ components:
         To: { type: string }
         Subject: { type: string }
         Body: { type: string }
+        TemplateName: { type: string, description: Set for a template send; `Body` is then empty. }
         Status: { type: string, enum: [QUEUED, SENT, FAILED] }
         ProviderMessageID: { type: string }
         Error: { type: string }

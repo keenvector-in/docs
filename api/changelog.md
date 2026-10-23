@@ -2,6 +2,15 @@
 
 Dates are when each change landed in this documentation, not the backend commit date.
 
+## 2026-10-23
+
+- **Messages:** `POST /v1/messages` sends WhatsApp templates. Pass `template` (`name`,
+  `language`, and optional `body_params`, `header` and `buttons`) instead of `body`. Covers
+  authentication (OTP), utility and marketing templates. See
+  [WhatsApp](/api/channels/whatsapp#with-the-api-templates).
+- **Messages:** responses carry `TemplateName`. `Subject` now reads back correctly from
+  `GET /v1/messages` and idempotent replays.
+
 ## 2026-10-01
 
 - **Events:** `message.received`, `message.sent`, `message.failed` and `message.delivered` are delivered to your endpoint, in the `{type, tenant_id, occurred_at, data}` envelope.

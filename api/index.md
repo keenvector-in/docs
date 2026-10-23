@@ -53,7 +53,7 @@ KeenVector ──▶ your server               "events": message events, signed,
 | Idempotent retries (`Idempotency-Key` header) | Live |
 | Connect WhatsApp or Instagram with an API key (`/whatsapp/connections`, `/instagram/connections`) | Live |
 | Send on Instagram or website chat through the API | Not available |
-| Send WhatsApp templates through the API | Not available. Templates can be sent from campaigns and workflows in the console. |
+| Send WhatsApp templates through the API (`template` on `POST /v1/messages`) | Live. Body, header and button params. See [WhatsApp](/api/channels/whatsapp#with-the-api-templates). |
 | Self-serve API keys (create, list and revoke in the console) | Live. Business admins create and revoke; any team member can see the list. See [Authentication](/api/authentication). |
 | Outbound webhooks: register an endpoint, signing secret, test event, delivery log | Live. See [Events](/api/events). |
 | Message events (`message.received`, `message.sent`, `message.failed`, `message.delivered`) | Live. See [Events](/api/events). |

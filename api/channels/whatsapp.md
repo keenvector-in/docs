@@ -101,7 +101,7 @@ Once that's done, each inbound message starts your published workflows that use 
 
 ## Send messages
 
-### With the API: free text only
+### With the API: free text
 
 ```bash
 curl -X POST "$KV_BASE_URL/v1/messages" \
@@ -128,12 +128,48 @@ contact, an OTP or anything else outside the window, you need an approved **mess
 template**.
 :::
 
-::: warning Not available yet: templates through the API
-`POST /v1/messages` has no template field. Today, templates are sent only from the console:
-**Campaigns** sends an approved WhatsApp template to a list of recipients. The picker shows
-the templates in your WABA and their approval status. You create and submit templates in
-Meta's **WhatsApp Manager → Message Templates**, not in KeenVector.
-:::
+### With the API: templates
+
+Send `template` instead of `body` to use an approved template. It works outside the 24-hour
+window. You create and submit templates in Meta's **WhatsApp Manager → Message Templates**;
+**Campaigns** in the console shows them with their approval status.
+
+```bash
+curl -X POST "$KV_BASE_URL/v1/messages" \
+  -H "Authorization: Bearer kv_live_..." \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: login-otp-7731" \
+  -d '{
+    "channel": "whatsapp",
+    "to": "919876543210",
+    "template": {
+      "name": "login_otp",
+      "language": "en_US",
+      "body_params": ["482913"],
+      "buttons": [{ "index": 0, "sub_type": "url", "param": "482913" }]
+    }
+  }'
+```
+
+| Field | Required | What it fills |
+|---|---|---|
+| `template.name` | yes | The approved template's name |
+| `template.language` | yes | The locale it was approved in, e.g. `en_US`, `hi` |
+| `template.body_params` | no | `{{1}}`, `{{2}}`… in the body, in order |
+| `template.header` | no | `{ "type": "text", "text": "…" }` for a text header with a variable, or `{ "type": "image" \| "video" \| "document", "link": "https://…" }` for a media header. `filename` names a document |
+| `template.buttons` | no | One entry per button with a variable: `index` (position, from 0), `sub_type` (`url`, `quick_reply` or `copy_code`) and `param` |
+
+- Send either `body` or `template`, not both.
+- **Authentication (OTP) templates** take the code twice: as `body_params[0]` and as a `url`
+  button param at index 0. That's Meta's rule.
+- A `url` param is the dynamic end of the button's URL; `quick_reply` is the payload you get
+  back when the button is tapped; `copy_code` is a coupon code of at most 15 characters.
+- Template variables can't contain a newline, a tab or more than four spaces in a row, and
+  can't be empty. KeenVector returns `400` for these before anything is sent.
+- Whether the number of params matches the template only Meta knows. A mismatch comes back
+  as `FAILED` with Meta's reason in `Error`.
+- KeenVector stores the template's name (`TemplateName`) but not the params, so an OTP never
+  sits in your message history.
 
 ::: warning Delivered and read receipts
 KeenVector records Meta's `delivered` and `read` status callbacks when they arrive at your
@@ -162,4 +198,4 @@ From your real business number it fails with error `#131058`. Create your own te
 | `409 whatsapp_not_connected` or `404 whatsapp_not_connected` | No connection for your business | Connect first |
 | Meta's **Verify and save** fails | The verify token in Meta doesn't match the one KeenVector issued (KeenVector answers `403 verify token mismatch`), or the callback URL is wrong (`404`) | Copy the callback URL and verify token again from your webhook registration |
 | Meta's webhook deliveries fail with `403` | The signature check failed: the App Secret registered with KeenVector isn't your Meta app's current secret | Register the webhook again with the current App Secret |
-| The message is `SENT` but never arrives | You sent free text outside the 24-hour window | Send a template from Campaigns |
+| The message is `SENT` but never arrives | You sent free text outside the 24-hour window | Send a template |
